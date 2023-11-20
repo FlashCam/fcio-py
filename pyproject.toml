@@ -1,0 +1,54 @@
+[build-system]
+build-backend = "mesonpy"
+requires = [
+    "meson-python",
+    "meson >= 1.1.0",
+    "Cython >= 3.0",
+    "numpy",
+    "setuptools>=60",
+    "setuptools-scm[toml]>=8.0"
+]
+
+[project]
+dynamic = ["version"]
+name = "fcio"
+description = "FlashCam File Format (FCIO) reader for python."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MPL-2.0" }
+authors = [
+  {name = "Simon Sailer", email = "simon.sailer@mpi-hd.mpg.de"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: C",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development ",
+]
+
+[project.urls]
+Homepage = "https://github.com/FlashCam/fcio-py"
+Repository = "https://github.com/FlashCam/fcio-py.git"
+Issues = "https://github.com/FlashCam/fcio-py/issues"
+Changelog = "https://github.com/FlashCam/fcio-py/blob/main/CHANGELOG.md"
+
+[tool.meson-python.args]
+dist = ['--include-subprojects'] # required to include the c sources in the source distribution
+setup = ['-Dbuildtype=release'] # already default; here to allow developers quick switching
+install = ['--skip-subprojects'] # don't install subprojects, we only need the c soruces as cython input, no installed libraries
+
+[tool.setuptools_scm]
+version_file = "src/fcio/_version.py"

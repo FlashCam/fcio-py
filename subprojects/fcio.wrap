@@ -1,0 +1,8 @@
+[wrap-git]
+# url=https://www.mpi-hd.mpg.de/software/fwerner/bufio.git
+url=git-data@git-ssh.mpi-hd.mpg.de:FlashCam/fcio.git
+revision=meson
+depth=1
+
+[provide]
+dependency_names = fcio
