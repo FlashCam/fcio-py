@@ -5,12 +5,10 @@ requires = [
     "meson >= 1.1.0",
     "Cython >= 3.0",
     "numpy",
-    "setuptools>=60",
-    "setuptools-scm[toml]>=8.0"
 ]
 
 [project]
-dynamic = ["version"]
+dynamic = ['version']
 name = "fcio"
 description = "FlashCam File Format (FCIO) reader for python."
 readme = "README.md"
@@ -49,6 +47,3 @@ Changelog = "https://github.com/FlashCam/fcio-py/blob/main/CHANGELOG.md"
 dist = ['--include-subprojects'] # required to include the c sources in the source distribution
 setup = ['-Dbuildtype=release'] # already default; here to allow developers quick switching
 install = ['--skip-subprojects'] # don't install subprojects, we only need the c soruces as cython input, no installed libraries
-
-[tool.setuptools_scm]
-version_file = "src/fcio/_version.py"

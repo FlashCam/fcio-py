@@ -1,27 +1,29 @@
-VERSION:=$(shell python3 src/fcio/_version.py)
+VERSION:=$(shell python3 tools/version_util.py)
 
 .PHONY: build clean install uninstall dev upload upload-test
 
 all: build
 
 clean:
-	rm -r dist
+	@rm -r dist
 
 distclean: clean
-	 rm -rf subprojects/{bufio,tmio,fcio}
+	 @rm -rf subprojects/{bufio,tmio,fcio}
+
+update:
+	@meson subprojects update
 
 build:
-	meson subprojects update
-	python3 -m build
+	@python3 -m build
 
 uninstall:
-	python3 -m pip uninstall -y fcio
+	@python3 -m pip uninstall -y fcio
 
 install:
-	python3 -m pip install --force-reinstall dist/fcio-$(VERSION)-*.whl
+	@python3 -m pip install --force-reinstall dist/fcio-$(VERSION)-*.whl
 
 dev:
-	python3 -m pip install -e .
+	@python3 -m pip install -e .
 
 upload: build
 	twine upload --verbose dist/*.tar.gz
