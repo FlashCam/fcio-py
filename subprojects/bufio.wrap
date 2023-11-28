@@ -1,7 +1,6 @@
 [wrap-git]
-# url=https://www.mpi-hd.mpg.de/software/fwerner/bufio.git
-url=git-data@git-ssh.mpi-hd.mpg.de:fwerner/bufio.git
-revision=meson
+url=https://github.com/fwerner/bufio.git
+revision=main
 depth=1
 
 [provide]

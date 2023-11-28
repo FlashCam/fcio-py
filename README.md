@@ -1,26 +1,19 @@
 # Installation
 
-
-
 Run `python3 -m pip install fcio` to install from the pypi repository.
-
-Build requirements are `Cython`, `numpy` and `meson-python` (all installed automatically by `pip`).
-
-Clone this repo with `git clone https://github.com/FlashCam/fcio-python.git`.
-
-## Makefile
-
-Local usage and development is facilitated with a thin Makefile, wrapping `python3 -m build` and `python3 -m install` commands.
-
-Run `make dev` to install with pip3 as local development installation, otherwise run `make build` and `make install` to build a wheel and install it.
 
 # Description
 
-`fcio-python` provides a read-only wrapper around the `fcio.c` io library used in `fc250b` based digitizer systems.
+`fcio-py` provides a read-only wrapper around the `fcio.c` io library used in `fc250b` based digitizer systems.
 
-TODO: some text here
+The wrapper exposes the `fcio.c` memory fields as closely as possible to standard c-structs using numpy ndarrays or scalars where applicable.
+For convenience all supported fcio records are exposed as iterable properties of the base `FCIO` class to preselect records of interest.
 
-## Example
+# Usage
+
+
+
+## Simple code example
 
 The following example opens an fcio file and prints some basic event content to stdout:
 
@@ -36,30 +29,24 @@ with fcio_open(filename, extended=True) as io:
 
 ```
 
-The library provides scripts as examples, located in `src/fcio/cmds/cmds.py`.
-Most useful as a quick entry is the script `fcio-plot-events` which plots the raw traces using matplotlib.
+## Differences to C usage
 
-
-# Contributing
-
-This project is licensed under the Mozilla Public License 2.0, see [LICENSE](LICENSE) for the full terms of use. The MPL
-2.0 is a free-software license and we encourage you to feed back any improvements by submitting patches to the upstream
-maintainers (see Contact below).
+- `fcio-py` codifies the assumption that a `FCIOConfig` record must be available and skips all previous records on opening
+- reading of zstd or gzip compressed files is possible using suprocesses. This requires `zstd` or `gzip` to be available. If a file ends in `.zst` or `.gz` respectively and the `compression` parameter is default, this will happen automatically.
 
 # Development
 
 Development is best done in a local environment, e.g. using `venv`:
 
 ```
-# create local environment, e.g.:
-export MY_ENV=fcio
+# create local environment:
+export MY_ENV=fcio_dev
 python3 -m venv $MY_ENV
 
 # activate the environment
 source $MY_ENV/bin/activate
-
-# install the library in editable mode
-python3 -m pip install -e .
-# or using make
-make dev
 ```
+
+This library depends on `meson-python/meson` as build tool and `Cython`/`numpy` to wrap the `c`-sources. These should be installed automatically wenn running `python3 -m build`.
+To allow a more traditional workflow a thin `Makefile` is available which wraps the `python3` and `meson` specific commands.
+

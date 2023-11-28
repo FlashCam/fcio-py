@@ -45,5 +45,16 @@ Changelog = "https://github.com/FlashCam/fcio-py/blob/main/CHANGELOG.md"
 
 [tool.meson-python.args]
 dist = ['--include-subprojects'] # required to include the c sources in the source distribution
-setup = ['-Dbuildtype=release'] # already default; here to allow developers quick switching
-install = ['--skip-subprojects'] # don't install subprojects, we only need the c soruces as cython input, no installed libraries
+setup = [
+  '-Dbuildtype=release', # already default; here to allow developers quick switching
+  '-Db_ndebug=false', # default: if-release. bufio/tmio use asserts in tests.
+  ]
+install = ['--skip-subprojects'] # don't install subprojects, we only need the c sources as cython input, no installed libraries
+
+[tool.local.cythonize.kwargs.directive]
+# This section can contain compiler directives
+# Ref: https://github.com/cython/cython/blob/d6e6de9/Cython/Compiler/Options.py#L170-L242
+embedsignature = "True"
+emit_code_comments = "True"
+linetrace = "True"
+profile = "True"
