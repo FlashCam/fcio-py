@@ -36,5 +36,6 @@ if __name__ == "__main__":
         elif len(parts) == 3:
             git_version = f"{parts[0]}.dev{parts[1]}"
         else:
-            raise KeyError(f"Parsed git version does not conform the expected number of dashes. Got {git_describe}, but only none or 2 dash-separated format is expected from `git describe`.")
+            print("Unkown")
+            # raise KeyError(f"Parsed git version does not conform the expected number of dashes. Got {git_describe}, but only none or 2 dash-separated format is expected from `git describe`.")
         print(git_version)
