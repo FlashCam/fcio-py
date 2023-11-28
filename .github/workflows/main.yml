@@ -1,4 +1,4 @@
-name: fcio-py
+name: Build & Compile
 
 on:
   push:
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build wheel
+    name: Build & Compile
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
