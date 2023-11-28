@@ -36,11 +36,11 @@ jobs:
         git fetch --prune --unshallow
         git fetch --depth=1 origin
     - name: Install pypa/build
-      run: >-
+      run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install build
     - name: Test version detection
-      run: >-
+      run: |
         tools/version_util.py
     - name: Build source dist and a binary wheel
       run: python3 -m build
