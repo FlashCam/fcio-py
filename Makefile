@@ -1,6 +1,6 @@
 VERSION:=$(shell python3 tools/version_util.py)
 
-.PHONY: build clean install uninstall dev upload upload-test
+.PHONY: build clean install uninstall dev upload upload-test docs
 
 all: build
 
@@ -21,6 +21,9 @@ uninstall:
 
 install:
 	@python3 -m pip install --force-reinstall dist/fcio-$(VERSION)-*.whl
+
+docs:
+	@cd docs && $(MAKE) clean && $(MAKE) html
 
 dev:
 	@python3 -m pip install -e .
