@@ -1,0 +1,36 @@
+name: "Render Sphinx docs"
+
+on:
+  workflow_run:
+    workflows: [publish]
+    types:
+    - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update API & build HTML
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        python -m pip install -U pip
+        python -m pip install sphinx
+        python -m pip install -r docs/requirements.txt
+        python -m pip install fcio
+        sphinx-apidoc --force --no-toc --no-headings --output docs/source .
+        sphinx-build -M html docs/source/ docs/build/
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: html-docs
+        path: docs/build/html/
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/build/html
