@@ -13,9 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   build:
-    name: Build & Test Compilation
+    name: Build wheel
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -24,17 +23,22 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Get dependencies and install fcio-py
+    - name: Get history and tags for SCM versioning to work
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install --upgrade build
-        python3 -m build --wheel
-        python3 -m pip install dist/fcio-*.whl
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin
+    - name: Install pypa/build
+      run: >-
+        python3 -m pip install build --user
+    - name: Build a binary wheel
+      run: python3 -m build --wheel
+    - name: Install wheel
+      run: python3 -m pip install dist/fcio-*.whl
 
 #  build-docs:
 #    name: Build documentation
