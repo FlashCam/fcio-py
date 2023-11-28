@@ -8,6 +8,10 @@ include "cy_fcio_status.pyx"
 include "cy_fcio_event_ext.pyx"
 
 class CyFCIOTag:
+  """
+  A wrapper class for the fcio tag enum.
+  Provides supported tags as attributes.
+  """
   Config = FCIOTag.FCIOConfig
   Event = FCIOTag.FCIOEvent
   Status = FCIOTag.FCIOStatus
@@ -15,6 +19,56 @@ class CyFCIOTag:
   SparseEvent = FCIOTag.FCIOSparseEvent
 
 cdef class CyFCIO:
+  """
+  The main class providing access to the data fields.
+  Interaction mainly by using the get_record() function or CyFCIO's properties.
+  
+  Parameters
+  ----------
+  filename : str
+    the path to the filename to open, can be zst or gzip compressed files.
+
+  timeout : int
+    the timeout with which the connection should happend in milliseconds.
+    default: 0
+    -1 : wait indefinitely
+    >=0 : wait these milliseconds and return
+
+  buffersize : int
+    the size of the internal buffer used by bufio in bytes.
+    default: 0 uses bufios sane default size
+
+  debug : int
+    sets the debug level of the fcio.c library using FCIODebug(debug)
+    does not affect the verbosity of fcio-py parts
+    default: 0
+
+  compression : str
+    allows decompressing the file pointed to by filename while reading.
+    'zst'  : use zstd executable to open file. autodetected if file ends with '.zst'
+    'gzip' : use gzip executable to open file. autodetected if file ends with '.gz'
+    default 'auto' : determines possible compression by inspecting the filename ending
+
+  extended : bool
+    enables additional properties of the FCIO record classes by replacing the FCIO properties with their extended classes.
+    e.g. type(FCIO.event) == CyEvent or CyEventExt
+    some of these additions require additional calculations during reading, which might not be required and can be turned off by
+    setting 'extended' to False.
+    default: True
+
+    these properties provide access to:
+    - values derived from more basic values in the record
+    - explicit naming of certain field entries
+    - explicit limits to some array accessing, which fall on the responsibility of the programmer in the fcio.c library
+
+    examples:
+    - FCIO.event.card_address exposes an unsigned short array for the channels recorded in this event
+    - FCIO.event.utc_unix applies the reference way to calculate the absolute time from the Config and Event records (timestamp and timeoffset depending on gps clock presence)
+    - FCIO.event.trace array only returns the updated waveforms if the record was a SparseEvent
+    - FCIO.event.fpga_baseline/.fpga_energy in correct units for both firmware versions
+    - ...
+  """
+  
   cdef FCIOData* _fcio_data
   cdef int _timeout
   cdef int _buffersize
@@ -61,23 +115,38 @@ cdef class CyFCIO:
 
   @property
   def debug(self):
+    """
+      returns the set debug level
+    """
     return self._debug
 
   @debug.setter
   def debug(self, value):
+    """
+      set the fcio.c debug level
+    """
     self._debug = value
     FCIODebug(self._debug)
 
   @property
   def timeout(self):
+    """
+      returns the set timeout in milliseconds
+    """
     return self._timeout
 
   @timeout.setter
   def timeout(self, value):
+    """
+      adjust the timeout of the fcio.c library FCIOGetRecord functionality
+    """
     self._timeout = FCIOTimeout(self._fcio_data, value)
 
   @property
   def buffersize(self):
+    """
+      returns the set bufio buffersize in bytes
+    """
     return self._buffersize
 
   def open(self, filename : str, timeout : int = None, buffersize : int = None, debug : int = None, compression : str = None):
@@ -143,12 +212,22 @@ cdef class CyFCIO:
       if self._tag == FCIOTag.FCIOConfig:
         break
 
-  def close(self):
+  def close(self) -> None:
+    """
+      If a datafile is opened, close it and deallocate the FCIOData structure.
+    """
     if self._fcio_data:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
 
   cpdef get_record(self):
+    """
+      Calls FCIOGetRecord.
+      Saves the returned tag (accessible via CyFCIO.tag).
+
+      Returns False if the tag <= 0 indicating either a stream error or timeout.
+      Returns True otherwise.
+    """
     if self._fcio_data:
       self._tag = FCIOGetRecord(self._fcio_data)
 
@@ -175,42 +254,71 @@ cdef class CyFCIO:
 
   @property
   def tag(self):
+    """
+      returns the current tag
+    """
     return self._tag
   
   @property
   def config(self):
+    """
+      returns the current FCIOStates record
+    """
     return self.config
 
   @property
   def event(self):
+    """
+      returns the current FCIOStates record
+    """
     return self.event
 
   @property
   def status(self):
+    """
+      returns the current FCIOStates record
+    """
     return self.status
 
   @property
   def tags(self):
+    """
+      Iterate through all FCIO records in the datastream.
+      
+      Returns the current tag. Comparable behaviour to FCIOGetRecord of fcio.c
+    """
     while self.get_record():
       yield self._tag
 
   @property
   def configs(self):
+    """
+      Iterate through all FCIOConfig records in the datastream.
+
+      Returns the current config.
+    """
     while self.get_record():
       if self._tag == FCIOTag.FCIOConfig:
         yield self.config
 
   @property
   def events(self):
+    """
+      Iterate through all FCIOEvent or FCIOSparseEvent records in the datastream.
+
+      Returns the current event.
+    """
     while self.get_record():
       if self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent:
-        # if self._extended:
-        #   yield self.event_ext
-        # else:
-          yield self.event
+        yield self.event
 
   @property
   def statuses(self):
+    """
+      Iterate through all FCIOStatus records in the datastream.
+
+      Returns the current event.
+    """
     while self.get_record():
       if self._tag == FCIOTag.FCIOStatus:
         yield self.status

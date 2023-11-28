@@ -6,6 +6,12 @@ import numpy
 numpy.import_array()
 
 cdef class CyEvent:
+  """
+  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
+  FCIO.open().
+  Exposes the fcio_event struct fields from the fcio.c library.
+  All fields are exposes as numpy scalars or arrays with their corresponsing datatype and size.
+  """
   cdef fcio_event *event_ptr
   cdef fcio_config *config_ptr
   
@@ -70,52 +76,102 @@ cdef class CyEvent:
 
   @property
   def type(self):
+    """
+    the event type
+    """
     return numpy.int32(self.event_ptr.type)
 
   @property
   def pulser(self):
+    """
+    the pulser amplitude setting
+    """
     return numpy.float32(self.event_ptr.pulser)
 
   @property
   def timeoffset(self):
+    """
+    the offset between master card pps/clock counters and the readout server unix time.
+    """
     return self._np_timeoffset
 
   @property
   def deadregion(self):
+    """
+    the pps/clock counters while the readout system buffers are full.
+    only updates when the system is 
+    """
     return self._np_deadregion
 
   @property
   def timestamp(self):
+    """
+    contains event counters and pps/clock counters
+    """
     return self._np_timestamp
 
   @property
   def num_traces(self):
+    """
+    the numbers of traces contain in the event.
+    Incase of FCIOTag.Event tag, num_traces must be equal to the total number of mapped channels.
+    """
     return numpy.int32(self.event_ptr.num_traces)
 
   @property
   def trace_list(self):
+    """
+    Lookup array for the mapped channels, use with trace_buffer or trace attributes to get the
+    correct waveforms.
+    """
     return self._np_trace_list
 
   @property
   def timeoffset_size(self):
+    """
+    Size of the timeoffset array. 
+    Must be equal to the shape[0] of the array.
+    """
     return numpy.int32(self.event_ptr.timeoffset_size)
 
   @property
   def timestamp_size(self):
+    """
+    Size of the timestamp array. 
+    Must be equal to the shape[0] of the array.
+    """
     return numpy.int32(self.event_ptr.timestamp_size)
 
   @property
   def deadregion_size(self):
+    """
+    Size of the deadregion array. 
+    Must be equal to the shape[0] of the array.
+    """
     return numpy.int32(self.event_ptr.deadregion_size)
 
   @property
   def trace_buffer(self):
+    """
+    The internal 2D FCIO traces buffer.
+    Exposed for faster read operations, e.g. using memcpy or remapping of the buffer.
+    For waveform acces, use the `trace` property.
+    shape is (<total number of mapped trace>,<number of samples + 2>)
+    """
     return self._np_traces
 
   @property
   def trace(self):
+    """
+    2D array of the waveforms.
+    shape is (<total number of mapped trace>,<number of samples>)
+    """
     return self._np_trace
 
   @property
   def theader(self):
+    """
+    2D array of the waveforms headers containing the [0]fpga baseline and [1] fpga energy.
+    shape is (<total number of mapped trace>,<2>)
+    """
     return self._np_theader

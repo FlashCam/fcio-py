@@ -4,7 +4,19 @@ import numpy
 # unfortunately cython does not allow multiple inheritance
 # therefor we cannot also use CyConfig as a base class
 # and must use composition here
+
 cdef class CyEventExt(CyEvent):
+  """
+  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
+  FCIO.open().
+  Exposes the fcio_event struct fields from the fcio.c library.
+  All fields are exposes as numpy scalars or arrays with their corresponsing datatype and size.
+
+  Additionally CyEventExt offers some extension to the basic CyEvent attributes. These represent either
+  convenient names values in some field, or offer some required pre-calculation.
+
+  All CyEvent attributes are still available.
+  """
 
   cdef numpy.ndarray _card_addresses
   cdef numpy.ndarray _card_channels
@@ -111,10 +123,20 @@ cdef class CyEventExt(CyEvent):
 
   @property
   def fpga_baseline(self):
+    """
+    1D array.
+    shape is (<total number of mapped trace>,)
+    Contains the fpga baseline values.
+    """
     return self.theader[self._np_trace_list,0] / self.config_ptr.blprecision
 
   @property
   def fpga_energy(self):
+    """
+    1D array.
+    shape is (<total number of mapped trace>,)
+    Contains the fpga energy values.
+    """
     if self.config_ptr.adcbits == 12: #250MHz
       return self.config_ptr.sumlength / self.config_ptr.blprecision * (self.theader[self._np_trace_list,1] - self.theader[self._np_trace_list,0])
     elif self.config_ptr.adcbits == 16: #62.5MHz
@@ -122,52 +144,100 @@ cdef class CyEventExt(CyEvent):
 
   @property
   def card_address(self):
+    """
+    List of corresponding MAC addresses of the FADC Card per channel.
+    Display in human readable form as hex(car_address[index])
+    """
     return self._card_addresses[self._np_trace_list]
 
   @property
   def card_channel(self):
+    """
+    List of input RJ45 Jacks of the FADC Card per channel.
+    Must be within [0,5] for 16-bit firmware and [0,23] for 12-bit firmware.
+    """
     return self._card_channels[self._np_trace_list]
 
   @property
   def eventsamples(self):
+    """
+    The number of samples of each waveform.
+    This parameter is taken from the Config Record and exposed here for convenience.
+    """
     return numpy.int32(self.config_ptr.eventsamples)
 
   @property
   def eventnumber(self):
+    """
+    The event counter from the Top Master Card of this event for FCIOEvent records,
+    and the event counter from the corresponding FADC Card for FCIOSparseEvent records.
+    """
     return numpy.int32(self.timestamp[0])
 
   @property
   def gps(self):
+    """
+    The maximum time difference between fpga pps and readout server second.
+    If no external clock is used, this parameter is 0.
+    """
     return numpy.int32(self.config_ptr.gps)
 
   @property
   def run_time_sec(self):
+    """
+    The number of seconds since run start.
+    """
     return self._run_time_sec
 
   @property
   def run_time_nsec(self):
+    """
+    The number of nanoseconds since last second (run_time_sec).
+    """
     return self._run_time_nsec
 
   @property
   def run_time(self):
+    """
+    The time since run start in seconds as floating point, with decimals extracted from run_time_nsec.
+    """
     return self._run_time
 
   @property
   def utc_unix_sec(self):
+    """
+    The number of UTC seconds since beginning of unix time (first of January 1970).
+    """
     return self._utc_unix_sec
 
   @property
   def utc_unix_nsec(self):
+    """
+    The number of nanoseconds since last utc_unix_sec.
+    """
     return self._utc_unix_nsec
 
   @property
   def utc_unix(self):
+    """
+    The time (UTC) since beginning of unix time (first of January 1970) as floating point.
+    Be aware that float64 on your machine probably doesn't allow for better than microsecond precision.
+    """
     return self._utc_unix
 
   @property
   def trace(self):
+    """
+    2D array containing the waveforms.
+    shape is (<total number of traces in this event>,<number of samples>).
+    See trace_list to get the correct trace_index or card_address / card_channel attributes.
+    """
     return self._np_trace[self._np_trace_list]
 
   @property
   def theader(self):
+    """
+    2D array of the waveforms headers containing the [0]fpga baseline and [1] fpga energy.
+    shape is (<total number of traces in this event>,<2>)
+    """
     return self._np_theader[self._np_trace_list]
