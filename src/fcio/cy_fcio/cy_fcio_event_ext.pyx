@@ -29,7 +29,13 @@ cdef class CyEventExt(CyEvent):
   cdef numpy.int32_t _run_time_nsec
   cdef numpy.float64_t _run_time
 
-  cdef int _check_max_ticks
+  cdef numpy.uint32_t _dead_time_nsec
+  cdef numpy.uint32_t _total_dead_time_nsec
+
+  cdef numpy.int32_t _allowed_gps_error_nsec
+
+  cdef int _current_dead_time_end_pps
+  cdef int _current_dead_time_end_ticks
 
   cdef numpy.ndarray _tracemap
 
@@ -42,18 +48,22 @@ cdef class CyEventExt(CyEvent):
     self._card_addresses = self._tracemap >> 16 # upper 16bit
     self._card_channels = self._tracemap % (1 << 16) # lower 16bit
 
-    self._check_max_ticks = 1 if self.config_ptr.gps in (1,5) else 0
+    self._dead_time_nsec = 0
+    self._total_dead_time_nsec = 0
+
+    self._allowed_gps_error_nsec = self.config_ptr.gps
 
   cdef update(self):
     CyEvent.update(self)
-
-    # Check for timestamp consistency
+    
     cdef expected_max_ticks = 249999999
-    if self._check_max_ticks != 0:
-      if self.timestamp[3] != expected_max_ticks:
-        # replace with logging
-        print(f"Max Ticks field for event {self.timestamp[0]} pps {self.timestamp[1]} is not {expected_max_ticks} but {self.timestamp[3]}.")
-        # raise Exception(f"Max Ticks field for event {self.timestamp[0]} pps {self.timestamp[1]} is not {expected_max_ticks} but {self.timestamp[3]}.")
+    
+    cdef numpy.int64_t _current_clock_offset
+
+    _current_clock_offset = abs(self.timestamp[3] - expected_max_ticks) * 4  
+    
+    if _current_clock_offset > self._allowed_gps_error_nsec:
+      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_nsec}")
 
     # update time information
     self._run_time_sec = self.timestamp[1]
@@ -75,6 +85,13 @@ cdef class CyEventExt(CyEvent):
 
     # TODO correct for the delta t between reset of counters and actually enabling the trigger
     self._run_time = self._run_time_sec + 1.0e-9 * self._run_time_nsec
+
+    # determine if we have a new dead end and update the counters
+    if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
+      self._dead_time_nsec = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000 + 4 * (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1])
+      self._total_dead_time_nsec += self._dead_time_nsec
+    else:
+      self._dead_time_nsec = 0
 
   cpdef trace_indices(self, trace_idx = None, trace_map = None, warn_unmapped = False):
     import numbers
@@ -141,6 +158,19 @@ cdef class CyEventExt(CyEvent):
       return self.config_ptr.sumlength / self.config_ptr.blprecision * (self.theader[self._np_trace_list,1] - self.theader[self._np_trace_list,0])
     elif self.config_ptr.adcbits == 16: #62.5MHz
       return self.theader[self._np_trace_list,1]
+  
+  @property
+  def dead_time_nsec(self):
+    """
+
+    """
+    return self._dead_time_nsec
+
+  @property
+  def total_dead_time_nsec(self):
+    """
+    """
+    return self._total_dead_time_nsec
 
   @property
   def card_address(self):
