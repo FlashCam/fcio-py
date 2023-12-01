@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3] - 2023-12-01
+
+### Added
+
+- Added dead time calculation to CyEventExt.
+- Added automatic deployment of the documentation to github pages.
+
 ## [0.2.2] - 2023-11-27
 
 ### Added

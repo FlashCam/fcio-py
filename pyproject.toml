@@ -36,12 +36,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Software Development ",
 ]
+dependencies = [
+  "numpy"
+]
 
 [project.urls]
 Homepage = "https://github.com/FlashCam/fcio-py"
 Repository = "https://github.com/FlashCam/fcio-py.git"
 Issues = "https://github.com/FlashCam/fcio-py/issues"
 Changelog = "https://github.com/FlashCam/fcio-py/blob/main/CHANGELOG.md"
+Documentation = "https://flashcam.github.io/fcio-py/"
 
 [tool.meson-python.args]
 dist = ['--include-subprojects'] # required to include the c sources in the source distribution

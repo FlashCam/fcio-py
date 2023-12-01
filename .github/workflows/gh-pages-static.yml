@@ -30,16 +30,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Render
         run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           python -m pip install -U pip
-          python -m pip install sphinx
           python -m pip install -r docs/requirements.txt
-          python -m pip install fcio numpy
+          python -m pip install fcio
           sphinx-apidoc --force --no-toc --no-headings --output docs/source .
           sphinx-build -M html docs/source/ docs/build/
       - name: Setup Pages
