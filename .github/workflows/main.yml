@@ -43,8 +43,8 @@ jobs:
         tools/version_util.py
     - name: Build source dist and a binary wheel
       run: python3 -m build
-    - name: Install wheel
-      run: python3 -m pip install dist/fcio-*.whl
+    # - name: Install wheel
+    #   run: python3 -m pip install dist/fcio-*.whl
 
 #  build-docs:
 #    name: Build documentation

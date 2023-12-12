@@ -171,7 +171,7 @@ cdef class CyEvent:
   @property
   def theader(self):
     """
-    2D array of the waveforms headers containing the [0]fpga baseline and [1] fpga energy.
+    2D array of the waveforms headers containing the [0]fpga baseline and [1]fpga energy.
     shape is (<total number of mapped trace>,<2>)
     """
     return self._np_theader

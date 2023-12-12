@@ -1,9 +1,7 @@
 cimport numpy
 import numpy
 
-# unfortunately cython does not allow multiple inheritance
-# therefor we cannot also use CyConfig as a base class
-# and must use composition here
+import numbers
 
 cdef class CyEventExt(CyEvent):
   """
@@ -29,6 +27,10 @@ cdef class CyEventExt(CyEvent):
   cdef numpy.int32_t _run_time_nsec
   cdef numpy.float64_t _run_time
 
+  cdef bool _wait_for_first_event
+  cdef numpy.int32_t _start_time_sec
+  cdef numpy.int32_t _start_time_nsec
+
   cdef numpy.uint32_t _dead_time_nsec
   cdef numpy.uint32_t _total_dead_time_nsec
 
@@ -52,9 +54,16 @@ cdef class CyEventExt(CyEvent):
     self._total_dead_time_nsec = 0
 
     self._allowed_gps_error_nsec = self.config_ptr.gps
+    self._wait_for_first_event = True
+    self._start_time_sec = 0
+    self._start_time_nsec = 0
 
   cdef update(self):
     CyEvent.update(self)
+    if self._wait_for_first_event:
+      self._start_time_sec = self.event_ptr.deadregion[2]
+      self._start_time_nsec = self.event_ptr.deadregion[3] * 4
+      self._wait_for_first_event = False
     
     cdef expected_max_ticks = 249999999
     
@@ -65,9 +74,17 @@ cdef class CyEventExt(CyEvent):
     if _current_clock_offset > self._allowed_gps_error_nsec:
       print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_nsec}")
 
-    # update time information
-    self._run_time_sec = self.timestamp[1]
-    self._run_time_nsec = 4 * self.timestamp[2]
+    # update relative time information, correct for time until the trigger was enabled in the system
+    self._run_time_sec = self.timestamp[1] - self._start_time_sec
+    self._run_time_nsec = 4 * self.timestamp[2] - self._start_time_nsec
+    while self._run_time_nsec < 0:
+      self._run_time_nsec += 1000000000L
+      self._run_time_sec -= 1
+
+    self._run_time = self._run_time_sec + 1.0e-9 * self._run_time_nsec
+
+
+    # update absolute time information
     self._utc_unix_sec = self._run_time_sec
     self._utc_unix_nsec = self._run_time_nsec
 
@@ -83,18 +100,16 @@ cdef class CyEventExt(CyEvent):
     
     self._utc_unix = self._utc_unix_sec + 1.0e-9 * self._utc_unix_nsec
 
-    # TODO correct for the delta t between reset of counters and actually enabling the trigger
-    self._run_time = self._run_time_sec + 1.0e-9 * self._run_time_nsec
 
-    # determine if we have a new dead end and update the counters
+    # determine if we have a new dead region end and update the counters
     if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
-      self._dead_time_nsec = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000 + 4 * (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1])
+      self._dead_time_nsec = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
       self._total_dead_time_nsec += self._dead_time_nsec
     else:
       self._dead_time_nsec = 0
 
+
   cpdef trace_indices(self, trace_idx = None, trace_map = None, warn_unmapped = False):
-    import numbers
 
     cdef set trace_indices = set()
     cdef unsigned int tracemap_to_check
@@ -162,13 +177,14 @@ cdef class CyEventExt(CyEvent):
   @property
   def dead_time_nsec(self):
     """
-
+    The dead time since the last triggered event in nanoseconds
     """
     return self._dead_time_nsec
 
   @property
   def total_dead_time_nsec(self):
     """
+    The total dead time since the last DAQ reset (start of run) in nanoseconds
     """
     return self._total_dead_time_nsec
 
