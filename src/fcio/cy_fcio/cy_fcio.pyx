@@ -1,4 +1,5 @@
 from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOData, FCIOTag
+from cfcio cimport FCIOMaxChannels,FCIOMaxSamples,FCIOMaxPulses,FCIOTraceBufferLength
 cimport numpy
 import tempfile, os, subprocess
 
@@ -17,6 +18,15 @@ class CyFCIOTag:
   Status = FCIOTag.FCIOStatus
   RecEvent = FCIOTag.FCIORecEvent
   SparseEvent = FCIOTag.FCIOSparseEvent
+
+class CyFCIOLimit:
+  """
+  A wrapper class to expose the compile time defines used in fcio.c
+  """
+  MaxChannels = FCIOMaxChannels
+  MaxSamples = FCIOMaxSamples
+  MaxPulses = FCIOMaxPulses
+  TraceBufferLength = FCIOTraceBufferLength
 
 cdef class CyFCIO:
   """
