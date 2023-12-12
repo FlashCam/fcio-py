@@ -27,7 +27,7 @@ cdef class CyEventExt(CyEvent):
   cdef numpy.int32_t _run_time_nsec
   cdef numpy.float64_t _run_time
 
-  cdef bool _wait_for_first_event
+  cdef numpy.int32_t _wait_for_first_event
   cdef numpy.int32_t _start_time_sec
   cdef numpy.int32_t _start_time_nsec
 
