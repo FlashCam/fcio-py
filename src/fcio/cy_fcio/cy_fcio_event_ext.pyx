@@ -19,22 +19,24 @@ cdef class CyEventExt(CyEvent):
   cdef numpy.ndarray _card_addresses
   cdef numpy.ndarray _card_channels
 
-  cdef numpy.int32_t _utc_unix_sec
-  cdef numpy.int32_t _utc_unix_nsec
+  
+  cdef numpy.int64_t _utc_unix_ns
   cdef numpy.float64_t _utc_unix
-
-  cdef numpy.int32_t _run_time_sec
-  cdef numpy.int32_t _run_time_nsec
+  
+  cdef numpy.int64_t _run_time_ns
   cdef numpy.float64_t _run_time
 
   cdef numpy.int32_t _wait_for_first_event
-  cdef numpy.int32_t _start_time_sec
-  cdef numpy.int32_t _start_time_nsec
+  
+  cdef numpy.int64_t _start_time_ns
 
-  cdef numpy.uint32_t _dead_time_nsec
-  cdef numpy.uint32_t _total_dead_time_nsec
+  # cdef numpy.int64_t _dead_time_ns
+  # cdef numpy.int64_t _total_dead_time_ns
 
-  cdef numpy.int32_t _allowed_gps_error_nsec
+  cdef numpy.ndarray _dead_time_ns
+  cdef numpy.ndarray _total_dead_time_ns
+
+  cdef numpy.int32_t _allowed_gps_error_ns
 
   cdef int _current_dead_time_end_pps
   cdef int _current_dead_time_end_ticks
@@ -50,20 +52,29 @@ cdef class CyEventExt(CyEvent):
     self._card_addresses = self._tracemap >> 16 # upper 16bit
     self._card_channels = self._tracemap % (1 << 16) # lower 16bit
 
-    self._dead_time_nsec = 0
-    self._total_dead_time_nsec = 0
+    self._dead_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
+    self._total_dead_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
 
-    self._allowed_gps_error_nsec = self.config_ptr.gps
+    self._allowed_gps_error_ns = self.config_ptr.gps
     self._wait_for_first_event = True
-    self._start_time_sec = 0
-    self._start_time_nsec = 0
+    self._start_time_ns = 0
 
   cdef update(self):
     CyEvent.update(self)
+
+    cdef numpy.int64_t _event_deadtime
+
     if self._wait_for_first_event:
-      self._start_time_sec = self.event_ptr.deadregion[2]
-      self._start_time_nsec = self.event_ptr.deadregion[3] * 4
+      self._start_time_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
       self._wait_for_first_event = False
+    else:
+      # determine if we have a new dead region end and update the counters
+      if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
+        _event_deadtime = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
+        self._dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] = _event_deadtime
+        self._total_dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] += _event_deadtime
+      else:
+        self._dead_time_ns[:] = 0
     
     cdef expected_max_ticks = 249999999
     
@@ -71,43 +82,24 @@ cdef class CyEventExt(CyEvent):
 
     _current_clock_offset = abs(self.timestamp[3] - expected_max_ticks) * 4  
     
-    if _current_clock_offset > self._allowed_gps_error_nsec:
-      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_nsec}")
+    if _current_clock_offset > self._allowed_gps_error_ns:
+      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}")
+
+    cdef numpy.int64_t nanoseconds_since_daq_reset
+    # store the current clock cycle information temporarily
+    nanoseconds_since_daq_reset = (1000000000L * self.timestamp[1] + 4 * self.timestamp[2])
 
     # update relative time information, correct for time until the trigger was enabled in the system
-    self._run_time_sec = self.timestamp[1] - self._start_time_sec
-    self._run_time_nsec = 4 * self.timestamp[2] - self._start_time_nsec
-    while self._run_time_nsec < 0:
-      self._run_time_nsec += 1000000000L
-      self._run_time_sec -= 1
-
-    self._run_time = self._run_time_sec + 1.0e-9 * self._run_time_nsec
-
+    self._run_time_ns = nanoseconds_since_daq_reset - self._start_time_ns
+    self._run_time = self._run_time_ns / 1000000000L
 
     # update absolute time information
-    self._utc_unix_sec = self._run_time_sec
-    self._utc_unix_nsec = self._run_time_nsec
-
     if self.config_ptr.gps != 0:
-      self._utc_unix_sec += self.timeoffset[2]
+      self._utc_unix_ns = nanoseconds_since_daq_reset + self.timeoffset[2] * 1000000000L
     else:
-      self._utc_unix_sec += self.timeoffset[0]
-      self._utc_unix_nsec += 1000 * self.timeoffset[1]
-
-      while self._utc_unix_nsec >= 1000000000L:
-        self._utc_unix_sec += 1
-        self._utc_unix_nsec -= 1000000000L
+      self._utc_unix_ns = nanoseconds_since_daq_reset + 1000000000L * self.timeoffset[0] + 1000 * self.timeoffset[1]
     
-    self._utc_unix = self._utc_unix_sec + 1.0e-9 * self._utc_unix_nsec
-
-
-    # determine if we have a new dead region end and update the counters
-    if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
-      self._dead_time_nsec = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
-      self._total_dead_time_nsec += self._dead_time_nsec
-    else:
-      self._dead_time_nsec = 0
-
+    self._utc_unix = self._utc_unix_ns / 1.0e-9
 
   cpdef trace_indices(self, trace_idx = None, trace_map = None, warn_unmapped = False):
 
@@ -175,18 +167,18 @@ cdef class CyEventExt(CyEvent):
       return self.theader[self._np_trace_list,1]
   
   @property
-  def dead_time_nsec(self):
+  def dead_time_ns(self):
     """
     The dead time since the last triggered event in nanoseconds
     """
-    return self._dead_time_nsec
+    return self._dead_time_ns[self._np_trace_list]
 
   @property
-  def total_dead_time_nsec(self):
+  def total_dead_time_ns(self):
     """
     The total dead time since the last DAQ reset (start of run) in nanoseconds
     """
-    return self._total_dead_time_nsec
+    return self._total_dead_time_ns[self._np_trace_list]
 
   @property
   def card_address(self):
@@ -229,44 +221,30 @@ cdef class CyEventExt(CyEvent):
     return numpy.int32(self.config_ptr.gps)
 
   @property
-  def run_time_sec(self):
+  def run_time_ns(self):
     """
-    The number of seconds since run start.
+    The number of nanoseconds since trigger enable.
     """
-    return self._run_time_sec
-
-  @property
-  def run_time_nsec(self):
-    """
-    The number of nanoseconds since last second (run_time_sec).
-    """
-    return self._run_time_nsec
+    return self._run_time_ns
 
   @property
   def run_time(self):
     """
-    The time since run start in seconds as floating point, with decimals extracted from run_time_nsec.
+    run_time_ns in seconds as float64.
     """
     return self._run_time
 
   @property
-  def utc_unix_sec(self):
+  def utc_unix_ns(self):
     """
-    The number of UTC seconds since beginning of unix time (first of January 1970).
+    The number of nanoseconds since 1970 (UTC unix timestamps).
     """
-    return self._utc_unix_sec
-
-  @property
-  def utc_unix_nsec(self):
-    """
-    The number of nanoseconds since last utc_unix_sec.
-    """
-    return self._utc_unix_nsec
+    return self._utc_unix_ns
 
   @property
   def utc_unix(self):
     """
-    The time (UTC) since beginning of unix time (first of January 1970) as floating point.
+    utc_unix_ns in seconds as float64.
     Be aware that float64 on your machine probably doesn't allow for better than microsecond precision.
     """
     return self._utc_unix
