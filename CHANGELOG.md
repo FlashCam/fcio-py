@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.5] - 2024-04-26
+
+### Added
+
+- workflow updates, internal
+
 ## [0.2.4] - 2024-04-26
 
 ### Added
