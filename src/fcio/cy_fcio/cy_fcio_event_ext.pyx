@@ -1,6 +1,8 @@
 cimport numpy
 import numpy
 
+import sys
+
 import numbers
 
 cdef class CyEventExt(CyEvent):
@@ -81,7 +83,7 @@ cdef class CyEventExt(CyEvent):
     _current_clock_offset = abs(self.timestamp[3] - expected_max_ticks) * 4  
     
     if _current_clock_offset > self._allowed_gps_error_ns:
-      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}")
+      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}",file=sys.stderr)
 
     cdef numpy.int64_t nanoseconds_since_daq_reset
     # store the current clock cycle information temporarily
