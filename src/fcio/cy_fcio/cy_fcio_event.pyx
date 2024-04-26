@@ -66,14 +66,6 @@ cdef class CyEvent:
     self._np_deadregion = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=deadregion_memview)
     self._np_trace_list = numpy.ndarray(shape=(FCIOMaxChannels,), dtype=numpy.uint16, offset=0, buffer=trace_list_memview)
 
-  cdef update(self):
-    # Call this function if a new event has been read.
-    # This updates the possible size changes
-    self._np_timestamp = numpy.lib.stride_tricks.as_strided(self._np_timestamp, shape=(self.event_ptr.timestamp_size,), writeable=False)
-    self._np_timeoffset = numpy.lib.stride_tricks.as_strided(self._np_timeoffset, shape=(self.event_ptr.timeoffset_size,), writeable=False)
-    self._np_deadregion = numpy.lib.stride_tricks.as_strided(self._np_deadregion, shape=(self.event_ptr.deadregion_size,), writeable=False)
-    self._np_trace_list = numpy.lib.stride_tricks.as_strided(self._np_trace_list, shape=(self.event_ptr.num_traces,), writeable=False)
-
   @property
   def type(self):
     """
@@ -93,7 +85,7 @@ cdef class CyEvent:
     """
     the offset between master card pps/clock counters and the readout server unix time.
     """
-    return self._np_timeoffset
+    return self._np_timeoffset[:self.event_ptr.timeoffset_size]
 
   @property
   def deadregion(self):
@@ -101,14 +93,14 @@ cdef class CyEvent:
     the pps/clock counters while the readout system buffers are full.
     only updates when the system is 
     """
-    return self._np_deadregion
+    return self._np_deadregion[:self.event_ptr.deadregion_size]
 
   @property
   def timestamp(self):
     """
     contains event counters and pps/clock counters
     """
-    return self._np_timestamp
+    return self._np_timestamp[:self.event_ptr.timestamp_size]
 
   @property
   def num_traces(self):
@@ -124,7 +116,7 @@ cdef class CyEvent:
     Lookup array for the mapped channels, use with trace_buffer or trace attributes to get the
     correct waveforms.
     """
-    return self._np_trace_list
+    return self._np_trace_list[:self.event_ptr.num_traces]
 
   @property
   def timeoffset_size(self):

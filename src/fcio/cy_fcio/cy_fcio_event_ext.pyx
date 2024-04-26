@@ -60,8 +60,6 @@ cdef class CyEventExt(CyEvent):
     self._start_time_ns = 0
 
   cdef update(self):
-    CyEvent.update(self)
-
     cdef numpy.int64_t _event_deadtime
 
     if self._wait_for_first_event:
