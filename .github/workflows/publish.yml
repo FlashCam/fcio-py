@@ -2,7 +2,7 @@ name: Publish fcio-py
 
 on:
   workflow_run:
-    workflows: [main]
+    workflows: [Build & Compile]
     types:
     - completed
 
