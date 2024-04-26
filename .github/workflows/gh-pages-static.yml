@@ -3,7 +3,7 @@ name: Deploy static content to Pages
 
 on:
   workflow_run:
-    workflows: [publish]
+    workflows: [Publish fcio-py]
     types:
     - completed
 
