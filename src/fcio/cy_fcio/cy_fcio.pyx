@@ -249,12 +249,8 @@ cdef class CyFCIO:
           self.event = CyEventExt(self)
         else:
           self.event = CyEvent(self)
-      elif self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent:
+      elif self._extended and (self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent):
         self.event.update()
-      elif self._tag == FCIOTag.FCIOStatus:
-        self.status.update()
-      elif self._tag == FCIOTag.FCIORecEvent:
-        pass
       elif self._tag <= 0:
         return False
 

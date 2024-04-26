@@ -30,11 +30,6 @@ cdef class CyCardStatus:
     self._environment = numpy.ndarray(shape=(16), dtype=numpy.int32, offset=0, buffer=environment_view)
     self._othererrors = numpy.ndarray(shape=(5), dtype=numpy.uint32, offset=0, buffer=othererrors_view)
 
-  cdef update(self):
-    self._linkstates = numpy.lib.stride_tricks.as_strided(self._linkstates, shape=(self.status.data[self.index].numlinks,), writeable=False)
-    self._ctilinks = numpy.lib.stride_tricks.as_strided(self._ctilinks, shape=(self.status.data[self.index].numctilinks,), writeable=False)
-    self._environment = numpy.lib.stride_tricks.as_strided(self._environment, shape=(self.status.data[self.index].numenv,), writeable=False)
-
   @property
   def reqid(self):
     """
@@ -152,21 +147,21 @@ cdef class CyCardStatus:
     1 humidity in o/oo
     2 temperatures in mDegree, only present if adc piggy cards are used (adc card).
     """
-    return self._environment
+    return self._environment[:self.status.data[self.index].numenv]
 
   @property
   def ctilinks(self):
     """
     Contain expert values, see fc250bcommands.h.
     """
-    return self._ctilinks
+    return self._ctilinks[:self.status.data[self.index].numctilinks]
 
   @property
   def linkstates(self):
     """
     Contain expert values, see fc250bcommands.h.
     """
-    return self._linkstates
+    return self._linkstates[:self.status.data[self.index].numlinks]
 
 cdef class CyStatus:
   """
@@ -193,16 +188,6 @@ cdef class CyStatus:
 
     cdef int[:] statustime_view = self.status.statustime
     self._statustime = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=statustime_view)
-
-  cdef update(self):
-    if self.num_cards != self.status.cards:
-      self.num_cards = self.status.cards
-      self._data = numpy.array([CyCardStatus(self, index) for index in range(self.num_cards)], dtype=object)
-
-    cdef CyCardStatus current_card_status
-    for cs in self._data:
-      current_card_status = cs
-      current_card_status.update()
 
   @property
   def status(self):
@@ -249,4 +234,4 @@ cdef class CyStatus:
     An array of CyCardStatus objects. The type of card is ordered as master -> trigger -> adc card and their counts should be taken from the CyConfig attributes.
 
     """
-    return self._data
+    return self._data[:self.status.cards]
