@@ -32,9 +32,6 @@ cdef class CyEventExt(CyEvent):
   
   cdef numpy.int64_t _start_time_ns
 
-  # cdef numpy.int64_t _dead_time_ns
-  # cdef numpy.int64_t _total_dead_time_ns
-
   cdef numpy.ndarray _dead_time_ns
   cdef numpy.ndarray _total_dead_time_ns
 
@@ -45,7 +42,6 @@ cdef class CyEventExt(CyEvent):
 
   cdef numpy.ndarray _tracemap
 
-  # def __cinit__(self):
   def __cinit__(self, fcio : CyFCIO):
 
     cdef unsigned int[:] tracemap_view = self.config_ptr.tracemap
