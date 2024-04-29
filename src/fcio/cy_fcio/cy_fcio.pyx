@@ -5,8 +5,10 @@ import tempfile, os, subprocess
 
 include "cy_fcio_config.pyx"
 include "cy_fcio_event.pyx"
+include "cy_fcio_recevent.pyx"
 include "cy_fcio_status.pyx"
 include "cy_fcio_event_ext.pyx"
+include "cy_fcio_recevent_ext.pyx"
 
 class CyFCIOTag:
   """
@@ -247,8 +249,10 @@ cdef class CyFCIO:
         self.status = CyStatus(self)
         if self._extended:
           self.event = CyEventExt(self)
+          self.recevent = CyRecEventExt(self)
         else:
           self.event = CyEvent(self)
+          self.recevent = CyRecEvent(self)
       elif self._extended and (self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent):
         self.event.update()
       elif self._tag <= 0:
