@@ -39,7 +39,7 @@ cdef class CyEvent:
     self.maxtraces = self.config_ptr.adcs + self.config_ptr.triggers
 
     # underlying buffer for trace and header information
-    cdef unsigned short [:] traces_memview = fcio._fcio_data.event.traces
+    cdef unsigned short [::1] traces_memview = fcio._fcio_data.event.traces
 
     shape = (self.maxtraces, self.config_ptr.eventsamples)
     self._np_trace = numpy.ndarray(shape=shape, dtype=numpy.uint16, offset=4, buffer=traces_memview)
@@ -56,10 +56,10 @@ cdef class CyEvent:
     strides = ( (self.tracesamples)*self._np_traces.itemsize, self._np_traces.itemsize)
     self._np_traces = numpy.lib.stride_tricks.as_strided(self._np_traces, shape=shape, strides=strides, writeable=False)
     
-    cdef int[:] timestamp_memview = fcio._fcio_data.event.timestamp
-    cdef int[:] timeoffset_memview = fcio._fcio_data.event.timeoffset
-    cdef int[:] deadregion_memview = fcio._fcio_data.event.deadregion
-    cdef unsigned short[:] trace_list_memview = fcio._fcio_data.event.trace_list
+    cdef int[::1] timestamp_memview = fcio._fcio_data.event.timestamp
+    cdef int[::1] timeoffset_memview = fcio._fcio_data.event.timeoffset
+    cdef int[::1] deadregion_memview = fcio._fcio_data.event.deadregion
+    cdef unsigned short[::1] trace_list_memview = fcio._fcio_data.event.trace_list
 
     self._np_timestamp = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timestamp_memview)
     self._np_timeoffset = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timeoffset_memview)

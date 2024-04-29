@@ -1,4 +1,4 @@
-from cfcio cimport fcio_recevent, fcio_config, FCIOMaxPulses, 
+from cfcio cimport fcio_recevent, fcio_config, FCIOMaxPulses
 
 cimport numpy
 import numpy
@@ -14,6 +14,8 @@ cdef class CyRecEvent:
   """
   cdef fcio_recevent *recevent_ptr
   cdef fcio_config *config_ptr
+
+  cdef int maxtraces
   
   cdef numpy.ndarray _np_channel_pulses
   cdef numpy.ndarray _np_flags
@@ -30,20 +32,22 @@ cdef class CyRecEvent:
     self.recevent_ptr = &fcio._fcio_data.recevent
     self.config_ptr = &fcio._fcio_data.config
 
-    cdef int [:] channel_pulses_memview = fcio._fcio_data.recevent.channel_pulses
-    cdef int [:] flags_memview = fcio._fcio_data.recevent.flags
-    cdef float [:] times_memview = fcio._fcio_data.recevent.times
-    cdef float [:] amplitudes_memview = fcio._fcio_data.recevent.amplitudes
+    # helper variables
+    self.maxtraces = self.config_ptr.adcs + self.config_ptr.triggers
 
-    self._np_channel_pulses = numpy.ndarray(shape=(self.config_ptr.adcs, ), dtype=numpy.int32, offset=0, buffer=channel_pulses_memview)
+    cdef int [::1] channel_pulses_memview = fcio._fcio_data.recevent.channel_pulses
+    cdef int [::1] flags_memview = fcio._fcio_data.recevent.flags
+    cdef float [::1] times_memview = fcio._fcio_data.recevent.times
+    cdef float [::1] amplitudes_memview = fcio._fcio_data.recevent.amplitudes
+
+    self._np_channel_pulses = numpy.ndarray(shape=(self.maxtraces, ), dtype=numpy.int32, offset=0, buffer=channel_pulses_memview)
     self._np_flags = numpy.ndarray(shape=(FCIOMaxPulses, ), dtype=numpy.int32, offset=0, buffer=flags_memview)
     self._np_times = numpy.ndarray(shape=(FCIOMaxPulses, ), dtype=numpy.float32, offset=0, buffer=times_memview)
     self._np_amplitudes = numpy.ndarray(shape=(FCIOMaxPulses, ), dtype=numpy.float32, offset=0, buffer=amplitudes_memview)
   
-    cdef int[:] timestamp_memview = fcio._fcio_data.event.timestamp
-    cdef int[:] timeoffset_memview = fcio._fcio_data.event.timeoffset
-    cdef int[:] deadregion_memview = fcio._fcio_data.event.deadregion
-    cdef unsigned short[:] trace_list_memview = fcio._fcio_data.event.trace_list
+    cdef int[::1] timestamp_memview = fcio._fcio_data.event.timestamp
+    cdef int[::1] timeoffset_memview = fcio._fcio_data.event.timeoffset
+    cdef int[::1] deadregion_memview = fcio._fcio_data.event.deadregion
 
     self._np_timestamp = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timestamp_memview)
     self._np_timeoffset = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timeoffset_memview)

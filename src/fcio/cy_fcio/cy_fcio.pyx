@@ -93,6 +93,7 @@ cdef class CyFCIO:
   
   cdef CyConfig config
   cdef CyEvent event
+  cdef CyRecEvent recevent
   cdef CyStatus status
   cdef bint _extended
 
@@ -255,6 +256,8 @@ cdef class CyFCIO:
           self.recevent = CyRecEvent(self)
       elif self._extended and (self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent):
         self.event.update()
+      elif self._extended and self._tag == FCIOTag.FCIORecEvent:
+        self.recevent.update()
       elif self._tag <= 0:
         return False
 
@@ -321,6 +324,17 @@ cdef class CyFCIO:
     while self.get_record():
       if self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent:
         yield self.event
+
+  @property
+  def recevents(self):
+    """
+      Iterate through all FCIORecEvent records in the datastream.
+
+      Returns the current event.
+    """
+    while self.get_record():
+      if self._tag == FCIOTag.FCIORecEvent:
+        yield self.recevent
 
   @property
   def statuses(self):

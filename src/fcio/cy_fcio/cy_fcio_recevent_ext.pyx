@@ -5,7 +5,7 @@ import sys
 
 import numbers
 
-cdef class CyRecEventExt(CyEvent):
+cdef class CyRecEventExt(CyRecEvent):
   """
   Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
   FCIO.open().
@@ -42,9 +42,12 @@ cdef class CyRecEventExt(CyEvent):
 
   cdef numpy.ndarray _tracemap
 
+  cdef numpy.ndarray _np_channel_pulses_start
+  cdef numpy.ndarray _np_channel_pulses_stop
+
   def __cinit__(self, fcio : CyFCIO):
 
-    cdef unsigned int[:] tracemap_view = self.config_ptr.tracemap
+    cdef unsigned int[::1] tracemap_view = self.config_ptr.tracemap
     self._tracemap = numpy.ndarray(shape=(self.maxtraces,), dtype=numpy.uint32, offset=0, buffer=tracemap_view)
 
     self._card_addresses = self._tracemap >> 16 # upper 16bit
@@ -58,17 +61,18 @@ cdef class CyRecEventExt(CyEvent):
     self._start_time_ns = 0
 
   cdef update(self):
+
     cdef numpy.int64_t _event_deadtime
 
     if self._wait_for_first_event:
-      self._start_time_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
+      self._start_time_ns = self.recevent_ptr.deadregion[2] * 1000000000L + self.recevent_ptr.deadregion[3] * 4
       self._wait_for_first_event = False
     else:
       # determine if we have a new dead region end and update the counters
-      if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
-        _event_deadtime = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
-        self._dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] = _event_deadtime
-        self._total_dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] += _event_deadtime
+      if self._current_dead_time_end_pps != self.recevent_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.recevent_ptr.deadregion[3]:
+        _event_deadtime = (self.recevent_ptr.deadregion[2]-self.recevent_ptr.deadregion[0]) * 1000000000L + (self.recevent_ptr.deadregion[3]-self.recevent_ptr.deadregion[1]) * 4
+        self._dead_time_ns[self.recevent_ptr.deadregion[5] : self.recevent_ptr.deadregion[5] + self.recevent_ptr.deadregion[6]] = _event_deadtime
+        self._total_dead_time_ns[self.recevent_ptr.deadregion[5] : self.recevent_ptr.deadregion[5] + self.recevent_ptr.deadregion[6]] += _event_deadtime
       else:
         self._dead_time_ns[:] = 0
     
@@ -173,10 +177,15 @@ cdef class CyRecEventExt(CyEvent):
     return self._utc_unix
 
   @property
-
-  @property
-  def channels:
-    ch_offsets = np.concatenate([[0],np.cumsum(x)[:-1]])
-    ch_sizes = np.cumsum(x)
-    for i, p_start, p_stop  in enumerate(ch_offsets, ch_sizes):
-      yield (i, self._np_flags[p_start:p_stop], self._np_times[p_start:p_stop], self._np_amplitudes[p_start:p_stop])
+  def pulses(self):
+    cdef int offset = 0
+    cdef int npulses, i
+    for i in range(self.maxtraces):
+      npulses = self.recevent_ptr.channel_pulses[i]
+      if npulses > 0:
+        yield (i, 
+          self._np_flags[offset:offset+npulses],
+          self._np_times[offset:offset+npulses],
+          self._np_amplitudes[offset:offset+npulses]
+        )
+        offset += npulses

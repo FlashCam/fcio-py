@@ -22,7 +22,7 @@ cdef class CyConfig:
 
     self.ntraces = self.config.adcs + self.config.triggers
 
-    cdef unsigned int[:] tracemap_view = self.config.tracemap
+    cdef unsigned int[::1] tracemap_view = self.config.tracemap
     self._tracemap = numpy.ndarray(shape=(self.ntraces,), dtype=numpy.uint32, offset=0, buffer=tracemap_view)
 
   @property

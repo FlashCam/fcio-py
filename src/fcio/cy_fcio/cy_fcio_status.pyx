@@ -20,10 +20,10 @@ cdef class CyCardStatus:
     self.card_status = &cy_status.status.data[index]
     self.index = index
 
-    cdef unsigned int[:] linkstates_view = self.card_status.linkstates
-    cdef unsigned int[:] ctilinks_view = self.card_status.ctilinks
-    cdef unsigned int[:] othererrors_view = self.card_status.othererrors
-    cdef int[:] environment_view = self.card_status.environment
+    cdef unsigned int[::1] linkstates_view = self.card_status.linkstates
+    cdef unsigned int[::1] ctilinks_view = self.card_status.ctilinks
+    cdef unsigned int[::1] othererrors_view = self.card_status.othererrors
+    cdef int[::1] environment_view = self.card_status.environment
 
     self._linkstates = numpy.ndarray(shape=(256), dtype=numpy.uint32, offset=0, buffer=linkstates_view)
     self._ctilinks = numpy.ndarray(shape=(4), dtype=numpy.uint32, offset=0, buffer=ctilinks_view)
@@ -186,7 +186,7 @@ cdef class CyStatus:
 
     self._data = numpy.array([CyCardStatus(self, index) for index in range(self.num_cards)], dtype=object)
 
-    cdef int[:] statustime_view = self.status.statustime
+    cdef int[::1] statustime_view = self.status.statustime
     self._statustime = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=statustime_view)
 
   @property
