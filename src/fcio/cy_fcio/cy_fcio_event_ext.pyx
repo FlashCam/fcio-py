@@ -17,10 +17,11 @@ cdef class CyEventExt(CyEvent):
 
   All CyEvent attributes are still available.
   """
+  cdef numpy.int32_t _wait_for_first_event
 
+  cdef numpy.ndarray _tracemap
   cdef numpy.ndarray _card_addresses
   cdef numpy.ndarray _card_channels
-
   
   cdef numpy.int64_t _utc_unix_ns
   cdef numpy.float64_t _utc_unix
@@ -28,19 +29,13 @@ cdef class CyEventExt(CyEvent):
   cdef numpy.int64_t _run_time_ns
   cdef numpy.float64_t _run_time
 
-  cdef numpy.int32_t _wait_for_first_event
+  cdef numpy.int32_t _allowed_gps_error_ns
   
   cdef numpy.int64_t _start_time_ns
-
   cdef numpy.ndarray _dead_time_ns
   cdef numpy.ndarray _total_dead_time_ns
-
-  cdef numpy.int32_t _allowed_gps_error_ns
-
   cdef int _current_dead_time_end_pps
   cdef int _current_dead_time_end_ticks
-
-  cdef numpy.ndarray _tracemap
 
   def __cinit__(self, fcio : CyFCIO):
 
@@ -65,12 +60,12 @@ cdef class CyEventExt(CyEvent):
       self._wait_for_first_event = False
     else:
       # determine if we have a new dead region end and update the counters
-      if self._current_dead_time_end_pps != self.event_ptr.deadregion[2] or self._current_dead_time_end_ticks != self.event_ptr.deadregion[3]:
+      if self._current_dead_time_end_pps == self.event_ptr.deadregion[2] and self._current_dead_time_end_ticks == self.event_ptr.deadregion[3]:
+        self._dead_time_ns[:] = 0
+      else:
         _event_deadtime = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
         self._dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] = _event_deadtime
         self._total_dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] += _event_deadtime
-      else:
-        self._dead_time_ns[:] = 0
     
     cdef expected_max_ticks = 249999999
     

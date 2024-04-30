@@ -97,7 +97,7 @@ cdef class CyFCIO:
   cdef CyStatus status
   cdef bint _extended
 
-  def __cinit__(self, filename : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = True):
+  def __cinit__(self, filename : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
     self._buffersize = buffersize
     self._timeout = timeout
@@ -275,21 +275,28 @@ cdef class CyFCIO:
   @property
   def config(self):
     """
-      returns the current FCIOStates record
+      returns the current FCIOConfig record
     """
     return self.config
 
   @property
   def event(self):
     """
-      returns the current FCIOStates record
+      returns the current FCIOEvent record
     """
     return self.event
 
   @property
+  def recevent(self):
+    """
+      returns the current FCIORecEvent record
+    """
+    return self.recevent
+
+  @property
   def status(self):
     """
-      returns the current FCIOStates record
+      returns the current FCIOStatus record
     """
     return self.status
 
