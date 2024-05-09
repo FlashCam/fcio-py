@@ -7,6 +7,7 @@ include "cy_fcio_config.pyx"
 include "cy_fcio_event.pyx"
 include "cy_fcio_recevent.pyx"
 include "cy_fcio_status.pyx"
+include "cy_dead_interval_tracker.pyx"
 include "cy_fcio_event_ext.pyx"
 include "cy_fcio_recevent_ext.pyx"
 

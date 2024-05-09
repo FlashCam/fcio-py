@@ -3,8 +3,6 @@ import numpy
 
 import sys
 
-import numbers
-
 cdef class CyEventExt(CyEvent):
   """
   Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
@@ -17,11 +15,11 @@ cdef class CyEventExt(CyEvent):
 
   All CyEvent attributes are still available.
   """
-  cdef numpy.int32_t _wait_for_first_event
-
   cdef numpy.ndarray _tracemap
   cdef numpy.ndarray _card_addresses
   cdef numpy.ndarray _card_channels
+
+  cdef int _num_channels_per_card
   
   cdef numpy.int64_t _utc_unix_ns
   cdef numpy.float64_t _utc_unix
@@ -31,13 +29,15 @@ cdef class CyEventExt(CyEvent):
 
   cdef numpy.int32_t _allowed_gps_error_ns
   
-  cdef numpy.int64_t _start_time_ns
-  cdef numpy.ndarray _dead_time_ns
+  cdef numpy.ndarray _start_time_ns
+  cdef numpy.ndarray _cur_dead_time_ns
   cdef numpy.ndarray _total_dead_time_ns
-  cdef int _current_dead_time_end_pps
-  cdef int _current_dead_time_end_ticks
+
+  cdef DeadIntervalBuffer _dead_interval_buffer
 
   def __cinit__(self, fcio : CyFCIO):
+
+    self._dead_interval_buffer = DeadIntervalBuffer()
 
     cdef unsigned int[::1] tracemap_view = self.config_ptr.tracemap
     self._tracemap = numpy.ndarray(shape=(self.maxtraces,), dtype=numpy.uint32, offset=0, buffer=tracemap_view)
@@ -45,96 +45,69 @@ cdef class CyEventExt(CyEvent):
     self._card_addresses = self._tracemap >> 16 # upper 16bit
     self._card_channels = self._tracemap % (1 << 16) # lower 16bit
 
-    self._dead_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
+    self._start_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
+    self._start_time_ns[:] = 0
+
+    self._cur_dead_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
     self._total_dead_time_ns = numpy.zeros(shape=(self.config_ptr.adcs,),dtype=numpy.int64)
 
+    if self.config_ptr.adcbits == 12:
+      self._num_channels_per_card = 24
+    elif self.config_ptr.adcbits == 16:
+      self._num_channels_per_card = 6
+
     self._allowed_gps_error_ns = self.config_ptr.gps
-    self._wait_for_first_event = True
-    self._start_time_ns = 0
 
   cdef update(self):
-    cdef numpy.int64_t _event_deadtime
-
-    if self._wait_for_first_event:
-      self._start_time_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
-      self._wait_for_first_event = False
-    else:
-      # determine if we have a new dead region end and update the counters
-      if self._current_dead_time_end_pps == self.event_ptr.deadregion[2] and self._current_dead_time_end_ticks == self.event_ptr.deadregion[3]:
-        self._dead_time_ns[:] = 0
-      else:
-        _event_deadtime = (self.event_ptr.deadregion[2]-self.event_ptr.deadregion[0]) * 1000000000L + (self.event_ptr.deadregion[3]-self.event_ptr.deadregion[1]) * 4
-        self._dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] = _event_deadtime
-        self._total_dead_time_ns[self.event_ptr.deadregion[5] : self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]] += _event_deadtime
     
-    cdef expected_max_ticks = 249999999
-    
-    cdef numpy.int64_t _current_clock_offset
+    ## calculate timestamps in nanoseconds and update float properties
 
-    _current_clock_offset = abs(self.timestamp[3] - expected_max_ticks) * 4  
-    
-    if _current_clock_offset > self._allowed_gps_error_ns:
-      print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}",file=sys.stderr)
-
-    cdef numpy.int64_t nanoseconds_since_daq_reset
-    # store the current clock cycle information temporarily
-    nanoseconds_since_daq_reset = (1000000000L * self.timestamp[1] + 4 * self.timestamp[2])
-
-    # update relative time information, correct for time until the trigger was enabled in the system
-    self._run_time_ns = nanoseconds_since_daq_reset - self._start_time_ns
+    # update current pps/clk counters
+    cdef long _daq_synchronized_timestamp_ns = (1000000000L * self.timestamp[1] + 4 * self.timestamp[2])
+    self._run_time_ns = _daq_synchronized_timestamp_ns # - self._start_time_ns[dr_start]
     self._run_time = self._run_time_ns / 1000000000L
 
     # update absolute time information
     if self.config_ptr.gps != 0:
-      self._utc_unix_ns = nanoseconds_since_daq_reset + self.timeoffset[2] * 1000000000L
+      # we have external clock (likely from a timeserver or gps clock)
+      self._utc_unix_ns = _daq_synchronized_timestamp_ns + self.timeoffset[2] * 1000000000L
     else:
-      self._utc_unix_ns = nanoseconds_since_daq_reset + 1000000000L * self.timeoffset[0] + 1000 * self.timeoffset[1]
+      # synchronization via server clock (likely from NTP server)
+      self._utc_unix_ns = _daq_synchronized_timestamp_ns + 1000000000L * self.timeoffset[0] + 1000 * self.timeoffset[1]
     
-    self._utc_unix = self._utc_unix_ns / 1.0e-9
+    self._utc_unix = self._utc_unix_ns / 1.0e9
 
-  cpdef trace_indices(self, trace_idx = None, trace_map = None, warn_unmapped = False):
+    cdef int _expected_max_ticks = 249999999
+    cdef int _current_clock_offset = abs(self.timestamp[3] - _expected_max_ticks) * 4  
+    # if _current_clock_offset > self._allowed_gps_error_ns:
+    #   print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}",file=sys.stderr)
 
-    cdef set trace_indices = set()
-    cdef unsigned int tracemap_to_check
+    # default deadtimes are the same for all channels
+    # we update them with the same values
+    # only dr_start is used to track progress
+    cdef int dr_start = 0
+    cdef int dr_end = self.config_ptr.adcs
 
-    # convert
-    if trace_idx != None:
-      if isinstance(trace_idx, numbers.Integral):
-        trace_idx = [trace_idx]
+    # for daqmode 12, each card has it's own eventnumbers, clock counters and deadregions
+    # need to track them separately, but will do it on a channel list basis
 
-      if numpy.iterable(trace_idx):
-        for idx in trace_idx:
-          if isinstance(idx, numbers.Integral):
-            if idx >= 0 or idx < self.maxtraces:
-              trace_indices.add(idx)
-            else:
-              raise KeyError(f"trace_idx {idx} not found in mapped channels.")
-          else:
-            raise ValueError(f"trace_idx {trace_idx} is not of integer type.")
-      else:
-        raise ValueError(f"{trace_idx} is neither an integer nor an iterable.")
+    if self.event_ptr.type == 11:
+      dr_start = self.event_ptr.deadregion[5]
+      dr_end = self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]
 
-    if trace_map != None:
-      if not numpy.iterable(trace_map):
-        trace_map = [trace_map]
+    cdef long _dead_interval_start_ns = self.event_ptr.deadregion[0] * 1000000000L + self.event_ptr.deadregion[1] * 4 
+    cdef long _dead_interval_stop_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
+    cdef long _dead_interval_ns = _dead_interval_stop_ns - _dead_interval_start_ns
 
-      if numpy.iterable(trace_map):
-        for card_to_map in trace_map:
-          if isinstance(card_to_map, numbers.Integral):
-            tracemap_to_check = card_to_map
-          elif isinstance(card_to_map[0], numbers.Integral) and isinstance(card_to_map[1], numbers.Integral):
-            tracemap_to_check = (card_to_map[0] << 16) + card_to_map[1]
-          else:
-            raise ValueError(f"trace_map {card_to_map} is neither of integer type or a sequence if minimum two integers.")
+    if _dead_interval_start_ns > 0:
+      self._dead_interval_buffer.add(_dead_interval_start_ns, _dead_interval_stop_ns, self.event_ptr.deadregion[5], self.event_ptr.deadregion[6])
+    else:
+      self._start_time_ns[dr_start : dr_end] = _dead_interval_stop_ns
 
-          # stupid search
-          for i, tracemap_entry in enumerate(self._tracemap):
-            if tracemap_entry == tracemap_to_check:
-              trace_indices.add(i)
-              break
-            elif warn_unmapped and tracemap_entry == 0:
-              raise KeyError(f"trace_map {hex(tracemap_to_check)} not found in mapped channels.")
-    return numpy.array(sorted(trace_indices))
+    self._cur_dead_time_ns[dr_start : dr_end] = 0
+    while self._dead_interval_buffer.is_before(_daq_synchronized_timestamp_ns, self.event_ptr.deadregion[5], self.event_ptr.deadregion[6]):
+      self._cur_dead_time_ns[dr_start : dr_end] = self._dead_interval_buffer.read(self.event_ptr.deadregion[5], self.event_ptr.deadregion[6])
+      self._total_dead_time_ns[dr_start : dr_end] += self._cur_dead_time_ns[dr_start : dr_end]
 
   @property
   def fpga_baseline(self):
@@ -143,7 +116,7 @@ cdef class CyEventExt(CyEvent):
     shape is (<total number of mapped trace>,)
     Contains the fpga baseline values.
     """
-    return self.theader[self._np_trace_list,0] / self.config_ptr.blprecision
+    return self.theader[self.trace_list,0] / self.config_ptr.blprecision
 
   @property
   def fpga_energy(self):
@@ -153,23 +126,34 @@ cdef class CyEventExt(CyEvent):
     Contains the fpga energy values.
     """
     if self.config_ptr.adcbits == 12: #250MHz
-      return self.config_ptr.sumlength / self.config_ptr.blprecision * (self.theader[self._np_trace_list,1] - self.theader[self._np_trace_list,0])
+      return self.config_ptr.sumlength / self.config_ptr.blprecision * (self.theader[self.trace_list,1] - self.theader[self.trace_list,0])
     elif self.config_ptr.adcbits == 16: #62.5MHz
-      return self.theader[self._np_trace_list,1]
+      return self.theader[self.trace_list,1]
   
   @property
-  def dead_time_ns(self):
+  def cur_dead_time_ns(self):
     """
     The dead time since the last triggered event in nanoseconds
     """
-    return self._dead_time_ns[self._np_trace_list]
+    return self._cur_dead_time_ns[self.trace_list]
 
   @property
-  def total_dead_time_ns(self):
+  def start_time_ns(self):
+    return self._start_time_ns[self.trace_list]
+
+  @property
+  def cur_dead_time(self):
+    """
+    The dead time since the last triggered event in nanoseconds
+    """
+    return self._cur_dead_time_ns[self.trace_list] / 1.0e9
+
+  @property
+  def dead_time_ns(self):
     """
     The total dead time since the last DAQ reset (start of run) in nanoseconds
     """
-    return self._total_dead_time_ns[self._np_trace_list]
+    return self._total_dead_time_ns[self.trace_list]
 
   @property
   def card_address(self):
@@ -177,7 +161,7 @@ cdef class CyEventExt(CyEvent):
     List of corresponding MAC addresses of the FADC Card per channel.
     Display in human readable form as hex(car_address[index])
     """
-    return self._card_addresses[self._np_trace_list]
+    return self._card_addresses[self.trace_list]
 
   @property
   def card_channel(self):
@@ -185,7 +169,7 @@ cdef class CyEventExt(CyEvent):
     List of input RJ45 Jacks of the FADC Card per channel.
     Must be within [0,5] for 16-bit firmware and [0,23] for 12-bit firmware.
     """
-    return self._card_channels[self._np_trace_list]
+    return self._card_channels[self.trace_list]
 
   @property
   def eventsamples(self):
@@ -247,7 +231,7 @@ cdef class CyEventExt(CyEvent):
     shape is (<total number of traces in this event>,<number of samples>).
     See trace_list to get the correct trace_index or card_address / card_channel attributes.
     """
-    return self._np_trace[self._np_trace_list]
+    return self._np_trace[self.trace_list]
 
   @property
   def theader(self):
@@ -255,4 +239,4 @@ cdef class CyEventExt(CyEvent):
     2D array of the waveforms headers containing the [0]fpga baseline and [1] fpga energy.
     shape is (<total number of traces in this event>,<2>)
     """
-    return self._np_theader[self._np_trace_list]
+    return self._np_theader[self.trace_list]
