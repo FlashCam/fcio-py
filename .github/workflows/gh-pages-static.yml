@@ -32,7 +32,8 @@ jobs:
     steps:
       - name: Render
         run: |
-          ls
+          ls ${{ github.workspace }}
+          cd ${{ github.workspace }}
           python -m pip install -U pip
           python -m pip install -r docs/requirements.txt
           python -m pip install fcio
