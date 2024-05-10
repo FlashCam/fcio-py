@@ -55,7 +55,9 @@ cdef class DeadIntervalBuffer():
         return False
       read_slot = self.current_read[trace_idx]
       # print(f"DEBUG DeadIntervalTracker/is_before: /trace {trace_idx} read slot {read_slot} fill level {self.fill[trace_idx]} {self.interval_end[trace_idx][read_slot]} <= {timestamp_ns} : {self.interval_end[trace_idx][read_slot] <= timestamp_ns}")
-      if self.interval_end[trace_idx][read_slot] <= timestamp_ns:
+      # if self.interval_end[trace_idx][read_slot] <= timestamp_ns:
+      if timestamp_ns - self.interval_end[trace_idx][read_slot] > -4:
+      # an overlap of 3 nanoseconds is allowed, as the 16bit firmware might read the stamps during the sampling of a 16ns window. This should not affect the 12bit firmware.
         return True
     return False
 
