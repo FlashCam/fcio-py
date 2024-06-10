@@ -117,21 +117,21 @@ cdef class CyRecEventExt(CyRecEvent):
 
   @property
   def start_time_ns(self):
-    return self._start_time_ns[self.trace_list]
+    return self._start_time_ns[self.channel_pulses > 0]
   
   @property
   def cur_dead_time_ns(self):
     """
     The dead time since the last triggered event in nanoseconds
     """
-    return self._cur_dead_time_ns[self.trace_list]
+    return self._cur_dead_time_ns[self.channel_pulses > 0]
 
   @property
   def dead_time_ns(self):
     """
     The total dead time since the last DAQ reset (start of run) in nanoseconds
     """
-    return self._total_dead_time_ns[self.trace_list]
+    return self._total_dead_time_ns[self.channel_pulses > 0]
 
   @property
   def card_address(self):
@@ -139,7 +139,7 @@ cdef class CyRecEventExt(CyRecEvent):
     List of corresponding MAC addresses of the FADC Card per channel.
     Display in human readable form as hex(car_address[index])
     """
-    return self._card_addresses[self.trace_list]
+    return self._card_addresses[self.channel_pulses > 0]
 
   @property
   def card_channel(self):
@@ -147,7 +147,7 @@ cdef class CyRecEventExt(CyRecEvent):
     List of input RJ45 Jacks of the FADC Card per channel.
     Must be within [0,5] for 16-bit firmware and [0,23] for 12-bit firmware.
     """
-    return self._card_channels[self.trace_list]
+    return self._card_channels[self.channel_pulses > 0]
 
   @property
   def eventnumber(self):

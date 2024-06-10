@@ -45,9 +45,9 @@ cdef class CyRecEvent:
     self._np_times = numpy.ndarray(shape=(FCIOMaxPulses, ), dtype=numpy.float32, offset=0, buffer=times_memview)
     self._np_amplitudes = numpy.ndarray(shape=(FCIOMaxPulses, ), dtype=numpy.float32, offset=0, buffer=amplitudes_memview)
   
-    cdef int[::1] timestamp_memview = fcio._fcio_data.event.timestamp
-    cdef int[::1] timeoffset_memview = fcio._fcio_data.event.timeoffset
-    cdef int[::1] deadregion_memview = fcio._fcio_data.event.deadregion
+    cdef int[::1] timestamp_memview = fcio._fcio_data.recevent.timestamp
+    cdef int[::1] timeoffset_memview = fcio._fcio_data.recevent.timeoffset
+    cdef int[::1] deadregion_memview = fcio._fcio_data.recevent.deadregion
 
     self._np_timestamp = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timestamp_memview)
     self._np_timeoffset = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=timeoffset_memview)
