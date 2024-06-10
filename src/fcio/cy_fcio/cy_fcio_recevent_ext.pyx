@@ -90,12 +90,12 @@ cdef class CyRecEventExt(CyRecEvent):
     # for daqmode 12, each card has it's own eventnumbers, clock counters and deadregions
     # need to track them separately, but will do it on a channel list basis
 
-    if self.event_ptr.type == 11:
-      dr_start = self.event_ptr.deadregion[5]
-      dr_end = self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]
+    if self.recevent_ptr.type == 11:
+      dr_start = self.recevent_ptr.deadregion[5]
+      dr_end = self.recevent_ptr.deadregion[5] + self.recevent_ptr.deadregion[6]
 
-    cdef long _dead_interval_start_ns = self.event_ptr.deadregion[0] * 1000000000L + self.event_ptr.deadregion[1] * 4 
-    cdef long _dead_interval_stop_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
+    cdef long _dead_interval_start_ns = self.recevent_ptr.deadregion[0] * 1000000000L + self.recevent_ptr.deadregion[1] * 4 
+    cdef long _dead_interval_stop_ns = self.recevent_ptr.deadregion[2] * 1000000000L + self.recevent_ptr.deadregion[3] * 4
     cdef long _dead_interval_ns = _dead_interval_stop_ns - _dead_interval_start_ns
 
     if numpy.any(self._start_time_ns[dr_start : dr_end] == -1):
@@ -108,11 +108,11 @@ cdef class CyRecEventExt(CyRecEvent):
 
     if _dead_interval_start_ns > 0:
       # if first event contains start and stop stamps, it's a true dead interval between events, add it
-      self._dead_interval_buffer.add(_dead_interval_start_ns, _dead_interval_stop_ns, self.event_ptr.deadregion[5], self.event_ptr.deadregion[6])
+      self._dead_interval_buffer.add(_dead_interval_start_ns, _dead_interval_stop_ns, self.recevent_ptr.deadregion[5], self.recevent_ptr.deadregion[6])
 
     self._cur_dead_time_ns[dr_start : dr_end] = 0
-    while self._dead_interval_buffer.is_before(_daq_synchronized_timestamp_ns, self.event_ptr.deadregion[5], self.event_ptr.deadregion[6]):
-      self._cur_dead_time_ns[dr_start : dr_end] = self._dead_interval_buffer.read(self.event_ptr.deadregion[5], self.event_ptr.deadregion[6])
+    while self._dead_interval_buffer.is_before(_daq_synchronized_timestamp_ns, self.recevent_ptr.deadregion[5], self.recevent_ptr.deadregion[6]):
+      self._cur_dead_time_ns[dr_start : dr_end] = self._dead_interval_buffer.read(self.recevent_ptr.deadregion[5], self.recevent_ptr.deadregion[6])
       self._total_dead_time_ns[dr_start : dr_end] += self._cur_dead_time_ns[dr_start : dr_end]
 
   @property
