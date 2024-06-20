@@ -118,7 +118,6 @@ cdef class CyFCIO:
       FCIOClose(self._fcio_data)
 
   def __enter__(self):
-    self.open(self._filename)
     return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
@@ -164,6 +163,8 @@ cdef class CyFCIO:
     return self._buffersize
 
   def open(self, filename : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto'):
+    if debug > 4:
+      print(f"fcio-py/open() {filename} {timeout} {buffersize} {debug} {compression}")
     self.close()
 
     self._filename = filename
