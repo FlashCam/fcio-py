@@ -163,7 +163,7 @@ cdef class CyFCIO:
     """
     return self._buffersize
 
-  def open(self, filename : str, timeout : int = None, buffersize : int = None, debug : int = None, compression : str = None):
+  def open(self, filename : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto'):
     self.close()
 
     self._filename = filename
@@ -177,7 +177,7 @@ cdef class CyFCIO:
     if compression:
       self._compression = compression
 
-    if self._compression is 'auto':
+    if self._compression == 'auto':
       if self._filename.endswith('.zst'):
         self._compression = 'zstd'
       elif self._filename.endswith('.gz'):
@@ -188,7 +188,7 @@ cdef class CyFCIO:
     # 1 second minimum timeout for launching the subprocess to decompress the file
     cdef int compression_minimum_timeout = 1000
 
-    if self._compression is 'zstd':
+    if self._compression == 'zstd':
       tmpdir = tempfile.TemporaryDirectory(prefix="fcio_")
       if self._timeout >= 0 and self._timeout < compression_minimum_timeout:
         self._timeout = compression_minimum_timeout
@@ -201,7 +201,7 @@ cdef class CyFCIO:
       if self._fcio_data == NULL:
         raise IOError(f"{self._filename} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
       
-    elif self._compression is 'gzip':
+    elif self._compression == 'gzip':
       tmpdir = tempfile.TemporaryDirectory(prefix="fcio_")
       if self._timeout >= 0 and self._timeout < compression_minimum_timeout:
         self._timeout = compression_minimum_timeout
@@ -214,7 +214,7 @@ cdef class CyFCIO:
       if self._fcio_data == NULL:
         raise IOError(f"{self._filename} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
 
-    elif self._compression is 'none':
+    elif self._compression == 'none':
       self._fcio_data = FCIOOpen(self._filename.encode(u"ascii"), self._timeout, self._buffersize)
     else:
       raise ValueError(f"Compression parameter {self._compression} is not supported. Files ending in '.zst' or '.gz' will be automatically decompressed during reading.")
