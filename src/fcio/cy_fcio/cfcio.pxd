@@ -94,6 +94,10 @@ cdef extern from "fcio.h":
         FCIOStatus
         FCIORecEvent
         FCIOSparseEvent
+        FCIOEventHeader
+        FCIOFSPConfig
+        FCIOFSPEvent
+        FCIOFSPStatus
 
     ctypedef void* FCIOStream
 
@@ -108,6 +112,8 @@ cdef extern from "fcio.h":
     int FCIOPutEvent(FCIOStream output, FCIOData* input)
 
     int FCIOPutSparseEvent(FCIOStream output, FCIOData* input)
+
+    int FCIOPutEventHeader(FCIOStream output, FCIOData *input)
 
     int FCIOPutRecEvent(FCIOStream output, FCIOData* input)
 
@@ -132,6 +138,8 @@ cdef extern from "fcio.h":
     int FCIORead(FCIOStream x, int size, void* data)
 
     int FCIOWaitMessage(FCIOStream x, int tmo)
+
+    FCIOStream FCIOStreamHandle(FCIOData *x)
 
     ctypedef struct FCIOState:
         fcio_config* config
@@ -172,3 +180,5 @@ cdef extern from "fcio.h":
     FCIOState* FCIOGetState(FCIOStateReader* reader, int offset, int* timedout)
 
     FCIOState* FCIOGetNextState(FCIOStateReader* reader, int* timedout)
+
+    int FCIOPutState(FCIOStream output, FCIOState* state)

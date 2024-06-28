@@ -20,17 +20,17 @@ incdir_numpy = run_command(py3,
   check : true
 ).stdout().strip()
 
-bufio_proj = subproject('bufio')
-bufio_inc = bufio_proj.get_variable('bufio_inc')
-bufio_sources = bufio_proj.get_variable('bufio_sources')
+fcio_proj = subproject('fcio')
+fcio_inc = fcio_proj.get_variable('fcio_inc')
+fcio_sources = fcio_proj.get_variable('fcio_sources')
 
 tmio_proj = subproject('tmio')
 tmio_inc = tmio_proj.get_variable('tmio_inc')
 tmio_sources = tmio_proj.get_variable('tmio_sources')
 
-fcio_proj = subproject('fcio')
-fcio_inc = fcio_proj.get_variable('fcio_inc')
-fcio_sources = fcio_proj.get_variable('fcio_sources')
+bufio_proj = subproject('bufio')
+bufio_inc = bufio_proj.get_variable('bufio_inc')
+bufio_sources = bufio_proj.get_variable('bufio_sources')
 
 py3.extension_module(
   'cy_fcio',
