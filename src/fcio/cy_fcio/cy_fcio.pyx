@@ -11,16 +11,43 @@ include "cy_dead_interval_tracker.pyx"
 include "cy_fcio_event_ext.pyx"
 include "cy_fcio_recevent_ext.pyx"
 
-class CyFCIOTag:
+cdef class CyFCIOTag:
   """
   A wrapper class for the fcio tag enum.
   Provides supported tags as attributes.
   """
+
   Config = FCIOTag.FCIOConfig
   Event = FCIOTag.FCIOEvent
   Status = FCIOTag.FCIOStatus
   RecEvent = FCIOTag.FCIORecEvent
   SparseEvent = FCIOTag.FCIOSparseEvent
+  EventHeader = FCIOTag.FCIOEventHeader
+  FSPConfig = FCIOTag.FCIOFSPConfig
+  FSPEvent = FCIOTag.FCIOFSPEvent
+  FSPStatus = FCIOTag.FCIOFSPStatus
+
+  def str(tag):
+    if tag == CyFCIOTag.Config:
+      return "Config"
+    elif tag == CyFCIOTag.Event:
+      return "Event"
+    elif tag == CyFCIOTag.Status:
+      return "Status"
+    elif tag == CyFCIOTag.RecEvent:
+      return "RecEvent"
+    elif tag == CyFCIOTag.SparseEvent:
+      return "SparseEvent"
+    elif tag == CyFCIOTag.EventHeader:
+      return "EventHeader"
+    elif tag == CyFCIOTag.FSPConfig:
+      return "FSPConfig"
+    elif tag == CyFCIOTag.FSPEvent:
+      return "FSPEvent"
+    elif tag == CyFCIOTag.FSPStatus:
+      return "FSPStatus"
+    else:
+      return "Unknown"
 
 class CyFCIOLimit:
   """
@@ -256,7 +283,7 @@ cdef class CyFCIO:
         else:
           self.event = CyEvent(self)
           self.recevent = CyRecEvent(self)
-      elif self._extended and (self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent):
+      elif self._extended and (self._tag in [FCIOTag.FCIOEvent, FCIOTag.FCIOSparseEvent, FCIOTag.FCIOEventHeader]):
         self.event.update()
       elif self._extended and self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
@@ -331,7 +358,7 @@ cdef class CyFCIO:
       Returns the current event.
     """
     while self.get_record():
-      if self._tag == FCIOTag.FCIOEvent or self._tag == FCIOTag.FCIOSparseEvent:
+      if self._tag in [FCIOTag.FCIOEvent, FCIOTag.FCIOSparseEvent, FCIOTag.FCIOEventHeader]:
         yield self.event
 
   @property

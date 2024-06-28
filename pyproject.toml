@@ -4,7 +4,7 @@ requires = [
     "meson-python",
     "meson >= 1.1.0",
     "Cython >= 3.0",
-    "numpy",
+    "numpy < 2.0.0",
     "GitPython",
 ]
 
@@ -38,7 +38,7 @@ classifiers = [
     "Topic :: Software Development ",
 ]
 dependencies = [
-  "numpy"
+  "numpy < 2.0.0"
 ]
 
 [project.urls]
@@ -53,6 +53,7 @@ dist = ['--include-subprojects'] # required to include the c sources in the sour
 setup = [
   '-Dbuildtype=release', # already default; here to allow developers quick switching
   '-Db_ndebug=false', # default: if-release. bufio/tmio use asserts in tests.
+  '--wrap-mode=forcefallback',
   ]
 install = ['--skip-subprojects'] # don't install subprojects, we only need the c sources as cython input, no installed libraries
 

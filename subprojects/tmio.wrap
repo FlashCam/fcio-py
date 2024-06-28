@@ -1,7 +1,0 @@
-[wrap-git]
-url=https://github.com/fwerner/tmio.git
-revision=main
-depth=1
-
-[provide]
-dependency_names = tmio
