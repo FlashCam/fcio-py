@@ -66,7 +66,7 @@ cdef class CyEvent:
     self._np_deadregion = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=deadregion_memview)
     self._np_trace_list = numpy.ndarray(shape=(FCIOMaxChannels,), dtype=numpy.uint16, offset=0, buffer=trace_list_memview)
 
-  cdef update(self):
+  cdef update(self, tag):
     pass
 
   @property

@@ -1,4 +1,5 @@
 cimport numpy
+from cfcio cimport FCIOTag
 import numpy
 
 import sys
@@ -34,6 +35,8 @@ cdef class CyEventExt(CyEvent):
 
   cdef DeadIntervalBuffer _dead_interval_buffer
 
+  cdef int tag
+
   def __cinit__(self, fcio : CyFCIO):
 
     self._dead_interval_buffer = DeadIntervalBuffer()
@@ -57,7 +60,9 @@ cdef class CyEventExt(CyEvent):
 
     self._allowed_gps_error_ns = self.config_ptr.gps
 
-  cdef update(self):
+  cdef update(self, tag):
+
+    self.tag = tag
     
     ## calculate timestamps in nanoseconds and update float properties
 
@@ -222,6 +227,8 @@ cdef class CyEventExt(CyEvent):
     shape is (<total number of traces in this event>,<number of samples>).
     See trace_list to get the correct trace_index or card_address / card_channel attributes.
     """
+    if self.tag == FCIOTag.FCIOEventHeader:
+      return None
     return self._np_trace[self.trace_list]
 
   @property
