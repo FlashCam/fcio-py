@@ -284,7 +284,7 @@ cdef class CyFCIO:
           self.event = CyEvent(self)
           self.recevent = CyRecEvent(self)
       elif self._extended and (self._tag in [FCIOTag.FCIOEvent, FCIOTag.FCIOSparseEvent, FCIOTag.FCIOEventHeader]):
-        self.event.update()
+        self.event.update(self._tag)
       elif self._extended and self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
       elif self._tag <= 0:
