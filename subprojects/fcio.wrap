@@ -1,6 +1,6 @@
 [wrap-git]
 url=https://github.com/FlashCam/fcio.git
-revision=main
+revision=add_put_state
 depth=1
 
 [provide]

@@ -1,0 +1,7 @@
+[wrap-git]
+url=git@github.com:ssailer/fc-stream-processor.git
+revision=rework_serializers
+depth=1
+
+[provide]
+dependency_names = fsp

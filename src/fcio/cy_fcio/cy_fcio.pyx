@@ -1,5 +1,7 @@
 from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOData, FCIOTag
 from cfcio cimport FCIOMaxChannels,FCIOMaxSamples,FCIOMaxPulses,FCIOTraceBufferLength
+from cfsp cimport FCIOGetFSPEvent
+
 cimport numpy
 import tempfile, os, subprocess
 
@@ -10,6 +12,8 @@ include "cy_fcio_status.pyx"
 include "cy_dead_interval_tracker.pyx"
 include "cy_fcio_event_ext.pyx"
 include "cy_fcio_recevent_ext.pyx"
+
+include "cy_fsp.pyx"
 
 cdef class CyFCIOTag:
   """
@@ -287,6 +291,10 @@ cdef class CyFCIO:
         self.event.update(self._tag)
       elif self._extended and self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
+      elif self._tag == FCIOTag.FCIOFSPConfig:
+        self.fsp_state = CyFSPState()
+      elif self._tag == FCIOTag.FCIOFSPEvent:
+        FCIOGetFSPEvent(self._fcio_data, self.fsp_state)
       elif self._tag <= 0:
         return False
 
