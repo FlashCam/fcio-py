@@ -1,6 +1,5 @@
-from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOData, FCIOTag
+from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
 from cfcio cimport FCIOMaxChannels,FCIOMaxSamples,FCIOMaxPulses,FCIOTraceBufferLength
-from cfsp cimport FCIOGetFSPEvent
 
 cimport numpy
 import tempfile, os, subprocess
@@ -128,6 +127,8 @@ cdef class CyFCIO:
   cdef CyRecEvent recevent
   cdef CyStatus status
   cdef bint _extended
+
+  cdef CyFSP fsp
 
   def __cinit__(self, filename : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
@@ -292,9 +293,12 @@ cdef class CyFCIO:
       elif self._extended and self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
       elif self._tag == FCIOTag.FCIOFSPConfig:
-        self.fsp_state = CyFSPState()
+        self.fsp = CyFSP()
+        self.fsp.read_fsp_config(self)
       elif self._tag == FCIOTag.FCIOFSPEvent:
-        FCIOGetFSPEvent(self._fcio_data, self.fsp_state)
+        self.fsp.read_fsp_event(self)
+      elif self._tag == FCIOTag.FCIOFSPStatus:
+        self.fsp.read_fsp_status(self)
       elif self._tag <= 0:
         return False
 
@@ -390,3 +394,7 @@ cdef class CyFCIO:
     while self.get_record():
       if self._tag == FCIOTag.FCIOStatus:
         yield self.status
+
+  @property
+  def fsp_event(self):
+    return self.fsp
