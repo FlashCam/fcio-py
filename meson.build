@@ -5,15 +5,13 @@ project('fcio',
   license: 'MPL-2.0',
   meson_version : '>= 1.1.0',
   default_options : [
-    'warning_level=3',
+    'warning_level=2',
     'buildtype=release',
-    'c_std=c99',
+    'c_std=c11',
   ]
 )
 
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
-py_dep = py3.dependency()
+py3 = import('python').find_installation(pure: false)
 
 incdir_numpy = run_command(py3,
   ['-c', 'import numpy; print(numpy.get_include())'],
@@ -32,20 +30,26 @@ bufio_proj = subproject('bufio')
 bufio_inc = bufio_proj.get_variable('bufio_inc')
 bufio_sources = bufio_proj.get_variable('bufio_sources')
 
+fsp_proj = subproject('fc-stream-processor')
+fsp_inc = fsp_proj.get_variable('fsp_inc')
+fsp_ser_sources = fsp_proj.get_variable('fsp_ser_sources')
+
 py3.extension_module(
   'cy_fcio',
   'src/fcio/cy_fcio/cy_fcio.pyx',
   bufio_sources,
   tmio_sources,
   fcio_sources,
+  fsp_ser_sources,
   install: true,
   include_directories: [
     bufio_inc,
     tmio_inc,
     fcio_inc,
+    fsp_inc,
     incdir_numpy
   ],
-  subdir: 'fcio'
+  subdir: 'fcio',
 )
 
 py3.install_sources(
