@@ -128,7 +128,7 @@ cdef class CyFCIO:
   cdef CyStatus status
   cdef bint _extended
 
-  cdef CyFSP fsp
+  cdef CyFSP _fsp
 
   def __cinit__(self, filename : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
@@ -293,12 +293,12 @@ cdef class CyFCIO:
       elif self._extended and self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
       elif self._tag == FCIOTag.FCIOFSPConfig:
-        self.fsp = CyFSP()
-        self.fsp.read_fsp_config(self)
+        self._fsp = CyFSP()
+        self._fsp.read_config(self)
       elif self._tag == FCIOTag.FCIOFSPEvent:
-        self.fsp.read_fsp_event(self)
+        self._fsp.read_event(self)
       elif self._tag == FCIOTag.FCIOFSPStatus:
-        self.fsp.read_fsp_status(self)
+        self._fsp.read_status(self)
       elif self._tag <= 0:
         return False
 
@@ -396,5 +396,5 @@ cdef class CyFCIO:
         yield self.status
 
   @property
-  def fsp_event(self):
-    return self.fsp
+  def fsp(self):
+    return self._fsp
