@@ -20,7 +20,7 @@ build:
 uninstall:
 	@python3 -m pip uninstall -y fcio
 
-install:
+install: build
 	@python3 -m pip install --force-reinstall dist/fcio-$(VERSION)-*.whl
 
 docs:

@@ -29,9 +29,9 @@ bufio_proj = subproject('bufio')
 bufio_inc = bufio_proj.get_variable('bufio_inc')
 bufio_sources = bufio_proj.get_variable('bufio_sources')
 
-fsp_proj = subproject('fc-stream-processor')
+fsp_proj = subproject('libfsp')
 fsp_inc = fsp_proj.get_variable('fsp_inc')
-fsp_ser_sources = fsp_proj.get_variable('fsp_ser_sources')
+fsp_io_sources = fsp_proj.get_variable('fsp_io_sources')
 
 py3.extension_module(
   'cy_fcio',
@@ -39,7 +39,7 @@ py3.extension_module(
   bufio_sources,
   tmio_sources,
   fcio_sources,
-  fsp_ser_sources,
+  fsp_io_sources,
   install: true,
   include_directories: [
     bufio_inc,
