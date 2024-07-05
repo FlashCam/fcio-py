@@ -1,6 +1,8 @@
 from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
 from cfcio cimport FCIOMaxChannels,FCIOMaxSamples,FCIOMaxPulses,FCIOTraceBufferLength
 
+from cy_fcio import CyFSP
+
 cimport numpy
 import tempfile, os, subprocess
 
@@ -11,8 +13,6 @@ include "cy_fcio_status.pyx"
 include "cy_dead_interval_tracker.pyx"
 include "cy_fcio_event_ext.pyx"
 include "cy_fcio_recevent_ext.pyx"
-
-include "cy_fsp.pyx"
 
 cdef class CyFCIOTag:
   """

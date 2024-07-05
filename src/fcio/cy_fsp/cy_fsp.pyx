@@ -5,7 +5,6 @@ from cython.operator import dereference
 
 from cy_fcio import CyFCIO
 
-
 cdef class CyFSPConfig:
   cdef:
     StreamProcessor* _processor

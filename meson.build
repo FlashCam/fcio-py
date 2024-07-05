@@ -36,6 +36,7 @@ fsp_io_sources = fsp_proj.get_variable('fsp_io_sources')
 py3.extension_module(
   'cy_fcio',
   'src/fcio/cy_fcio/cy_fcio.pyx',
+  'src/fcio/cy_fsp/cy_fsp.pyx',
   bufio_sources,
   tmio_sources,
   fcio_sources,
