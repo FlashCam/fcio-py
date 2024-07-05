@@ -2,8 +2,6 @@ cimport numpy
 from cfcio cimport FCIOTag
 import numpy
 
-import sys
-
 cdef class CyEventExt(CyEvent):
   """
   Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
@@ -35,7 +33,7 @@ cdef class CyEventExt(CyEvent):
 
   cdef DeadIntervalBuffer _dead_interval_buffer
 
-  cdef int tag
+  cdef int _tag
 
   def __cinit__(self, fcio : CyFCIO):
 
@@ -61,27 +59,30 @@ cdef class CyEventExt(CyEvent):
     self._allowed_gps_error_ns = self.config_ptr.gps
 
   cdef update(self, tag):
+    
+    # No const in cython :/
+    cdef long NS_PER_S = 1000000000
+    cdef int EXPECTED_MAX_TICKS = 249999999
 
-    self.tag = tag
+    self._tag = tag
     
     ## calculate timestamps in nanoseconds and update float properties
 
     # update current pps/clk counters
-    cdef long _daq_synchronized_timestamp_ns = (1000000000L * self.timestamp[1] + 4 * self.timestamp[2])
+    cdef long _daq_synchronized_timestamp_ns = (NS_PER_S * self.timestamp[1] + 4 * self.timestamp[2])
     self._fpga_time_ns = _daq_synchronized_timestamp_ns
 
     # update absolute time information
     if self.config_ptr.gps != 0:
       # we have external clock (likely from a timeserver or gps clock)
-      self._utc_unix_ns = _daq_synchronized_timestamp_ns + self.timeoffset[2] * 1000000000L
+      self._utc_unix_ns = _daq_synchronized_timestamp_ns + self.timeoffset[2] * NS_PER_S
     else:
       # synchronization via server clock (likely from NTP server)
-      self._utc_unix_ns = _daq_synchronized_timestamp_ns + 1000000000L * self.timeoffset[0] + 1000 * self.timeoffset[1]
+      self._utc_unix_ns = _daq_synchronized_timestamp_ns + NS_PER_S * self.timeoffset[0] + 1000 * self.timeoffset[1]
     
     self._utc_unix = self._utc_unix_ns / 1.0e9
 
-    cdef int _expected_max_ticks = 249999999
-    cdef int _current_clock_offset = abs(self.timestamp[3] - _expected_max_ticks) * 4  
+    cdef int _current_clock_offset = abs(self.timestamp[3] - EXPECTED_MAX_TICKS) * 4  
     # if _current_clock_offset > self._allowed_gps_error_ns:
     #   print(f"WARNING fcio: max_ticks of last pps cycle {self.timestamp[3]} with { _current_clock_offset } > {self._allowed_gps_error_ns}",file=sys.stderr)
 
@@ -98,8 +99,8 @@ cdef class CyEventExt(CyEvent):
       dr_start = self.event_ptr.deadregion[5]
       dr_end = self.event_ptr.deadregion[5] + self.event_ptr.deadregion[6]
 
-    cdef long _dead_interval_start_ns = self.event_ptr.deadregion[0] * 1000000000L + self.event_ptr.deadregion[1] * 4 
-    cdef long _dead_interval_stop_ns = self.event_ptr.deadregion[2] * 1000000000L + self.event_ptr.deadregion[3] * 4
+    cdef long _dead_interval_start_ns = self.event_ptr.deadregion[0] * NS_PER_S + self.event_ptr.deadregion[1] * 4 
+    cdef long _dead_interval_stop_ns = self.event_ptr.deadregion[2] * NS_PER_S + self.event_ptr.deadregion[3] * 4
     cdef long _dead_interval_ns = _dead_interval_stop_ns - _dead_interval_start_ns
 
     if numpy.any(self._start_time_ns[dr_start : dr_end] == -1):
@@ -227,8 +228,9 @@ cdef class CyEventExt(CyEvent):
     shape is (<total number of traces in this event>,<number of samples>).
     See trace_list to get the correct trace_index or card_address / card_channel attributes.
     """
-    if self.tag == FCIOTag.FCIOEventHeader:
-      return None
+    if self._tag == FCIOTag.FCIOEventHeader:
+      return self._np_trace[[]]
+
     return self._np_trace[self.trace_list]
 
   @property

@@ -14,6 +14,8 @@ include "cy_dead_interval_tracker.pyx"
 include "cy_fcio_event_ext.pyx"
 include "cy_fcio_recevent_ext.pyx"
 
+include "../cy_fsp/cy_fsp.pyx"
+
 cdef class CyFCIOTag:
   """
   A wrapper class for the fcio tag enum.

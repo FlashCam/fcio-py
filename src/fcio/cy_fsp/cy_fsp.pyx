@@ -1,9 +1,7 @@
 from cfsp cimport StreamProcessor, FSPState, FSPCallocStreamProcessor, FSPFreeStreamProcessor
 from cfsp cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
-from cfsp cimport FSPStats, FSPConfig, FSPObservables, WindowedPeakSumConfig, HardwareMajorityConfig, ChannelThresholdConfig
+from cfsp cimport FSPStats
 from cython.operator import dereference
-
-from cy_fcio import CyFCIO
 
 cdef class CyFSPConfig:
   cdef:
