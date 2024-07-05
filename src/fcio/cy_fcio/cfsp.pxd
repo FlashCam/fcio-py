@@ -1,16 +1,5 @@
 from numpy cimport uint8_t, uint64_t
-
-cdef extern from "fsp/io.h":
-  # Forward Decl
-  ctypedef struct FCIOData:
-    pass
-
-  void FCIOGetFSPConfig(FCIOData* input, StreamProcessor* processor)
-  void FCIOGetFSPEvent(FCIOData* input, FSPState* fsp_state)
-  void FCIOGetFSPStatus(FCIOData* input, StreamProcessor* processor)
-
-  void FSPFreeStreamProcessor(StreamProcessor* processor)
-  StreamProcessor* FSPCallocStreamProcessor()
+from cfcio cimport FCIOData
 
 cdef extern from "fsp/state.h":
 
@@ -206,3 +195,14 @@ cdef extern from "fsp/state.h":
     HardwareMajorityConfig *hwm_cfg
     ChannelThresholdConfig *ct_cfg
     FSPStats* stats
+
+cdef extern from "fcio.h":
+  cdef extern from "fsp/io.h":
+    # Forward Decl
+
+    void FCIOGetFSPConfig(FCIOData* input, StreamProcessor* processor)
+    void FCIOGetFSPEvent(FCIOData* input, FSPState* fsp_state)
+    void FCIOGetFSPStatus(FCIOData* input, StreamProcessor* processor)
+
+    void FSPFreeStreamProcessor(StreamProcessor* processor)
+    StreamProcessor* FSPCallocStreamProcessor()

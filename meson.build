@@ -1,6 +1,6 @@
 
 project('fcio',
-  'c', 'cython',
+  'cpp', 'c', 'cython',
   version : run_command(['tools/version_util.py'], check: true).stdout().strip(),
   license: 'MPL-2.0',
   meson_version : '>= 1.1.0',
@@ -34,9 +34,27 @@ fsp_proj = subproject('libfsp')
 fsp_inc = fsp_proj.get_variable('fsp_inc')
 fsp_io_sources = fsp_proj.get_variable('fsp_io_sources')
 
+# py3.extension_module(
+#   'cy_fcio',
+#   'src/fcio/cy_fcio/cy_fcio.pyx',
+#   bufio_sources,
+#   tmio_sources,
+#   fcio_sources,
+#   fsp_io_sources,
+#   install: true,
+#   include_directories: [
+#     bufio_inc,
+#     tmio_inc,
+#     fcio_inc,
+#     fsp_inc,
+#     incdir_numpy
+#   ],
+#   subdir: 'fcio',
+# )
+
 py3.extension_module(
-  'cy_fcio',
-  'src/fcio/cy_fcio/cy_fcio.pyx',
+  'cy_fsp',
+  'src/fcio/cy_fcio/cfsp.cpp',
   bufio_sources,
   tmio_sources,
   fcio_sources,

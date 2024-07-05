@@ -2,27 +2,9 @@ from cfsp cimport StreamProcessor, FSPState, FSPCallocStreamProcessor, FSPFreeSt
 from cfsp cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
 from cfsp cimport FSPStats, FSPConfig, FSPObservables, WindowedPeakSumConfig, HardwareMajorityConfig, ChannelThresholdConfig
 from cython.operator import dereference
-from libc.stdlib cimport malloc, free
 
 from cy_fcio import CyFCIO
-
-class RecursiveNamespace:
-  """https://dev.to/taqkarim/extending-simplenamespace-for-nested-dictionaries-58e8"""
-  @staticmethod
-  def map_entry(entry):
-    if isinstance(entry, dict):
-      return RecursiveNamespace(**entry)
-
-    return entry
-
-  def __init__(self, **kwargs):
-    for key, val in kwargs.items():
-      if type(val) == dict:
-        setattr(self, key, RecursiveNamespace(**val))
-      elif type(val) == list:
-        setattr(self, key, list(map(self.map_entry, val)))
-      else: # this is the only addition
-        setattr(self, key, val)        
+    
 
 cdef class CyFSPConfig:
   cdef:
@@ -37,7 +19,7 @@ cdef class CyFSPConfig:
 
   @property
   def buffer(self):
-    return self._processor.buffer
+    return dereference(self._processor.buffer)
 
   @property
   def wps(self):
