@@ -1,7 +1,6 @@
-
 project('fcio',
   'c', 'cython',
-  version : run_command(['tools/version_util.py'], check: true).stdout().strip(),
+  version : run_command(['python3','tools/version_util.py'], check: true).stdout().strip(),
   license: 'MPL-2.0',
   meson_version : '>= 1.1.0',
   default_options : [
