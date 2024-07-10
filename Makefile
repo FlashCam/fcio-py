@@ -1,4 +1,5 @@
-VERSION:=$(shell python3 tools/version_util.py)
+#VERSION:=$(shell python3 tools/version_util.py)
+VERSION:=$(shell git describe --tags)
 
 .PHONY: build clean install uninstall dev upload upload-test docs
 

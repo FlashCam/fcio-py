@@ -38,8 +38,5 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install build
-    - name: Test version detection
-      run: |
-        tools/version_util.py
     - name: Build source dist and a binary wheel
       run: python3 -m build
