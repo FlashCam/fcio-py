@@ -1,5 +1,5 @@
-#VERSION:=$(shell python3 tools/version_util.py)
-VERSION:=$(shell git describe --tags)
+VERSION:=$(shell python3 tools/version_util.py)
+# VERSION:=$(shell git describe --tags)
 
 .PHONY: build clean install uninstall dev upload upload-test docs
 
@@ -20,7 +20,7 @@ build:
 uninstall:
 	@python3 -m pip uninstall -y fcio
 
-install: build
+install:
 	@python3 -m pip install --force-reinstall dist/fcio-$(VERSION)-*.whl
 
 docs:

@@ -1,5 +1,7 @@
 from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
-from cfcio cimport FCIOMaxChannels,FCIOMaxSamples,FCIOMaxPulses,FCIOTraceBufferLength
+from cfcio cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
+
+from cfcio cimport FCIOSetMemField
 
 from cy_fcio import CyFSP
 
@@ -32,6 +34,7 @@ cdef class CyFCIOTag:
   FSPEvent = FCIOTag.FCIOFSPEvent
   FSPStatus = FCIOTag.FCIOFSPStatus
 
+  # could be replaced with FCIOTagStr(int tag) in fcio_utils.c
   def str(tag):
     if tag == CyFCIOTag.Config:
       return "Config"
@@ -67,11 +70,11 @@ cdef class CyFCIO:
   """
   The main class providing access to the data fields.
   Interaction mainly by using the get_record() function or CyFCIO's properties.
-  
+
   Parameters
   ----------
-  filename : str
-    the path to the filename to open, can be zst or gzip compressed files.
+  peer : str
+    the path to the peer to open, can be zst or gzip compressed files.
 
   timeout : int
     the timeout with which the connection should happend in milliseconds.
@@ -89,10 +92,10 @@ cdef class CyFCIO:
     default: 0
 
   compression : str
-    allows decompressing the file pointed to by filename while reading.
+    allows decompressing the file pointed to by peer while reading.
     'zst'  : use zstd executable to open file. autodetected if file ends with '.zst'
     'gzip' : use gzip executable to open file. autodetected if file ends with '.gz'
-    default 'auto' : determines possible compression by inspecting the filename ending
+    default 'auto' : determines possible compression by inspecting the peer ending
 
   extended : bool
     enables additional properties of the FCIO record classes by replacing the FCIO properties with their extended classes.
@@ -113,7 +116,7 @@ cdef class CyFCIO:
     - FCIO.event.fpga_baseline/.fpga_energy in correct units for both firmware versions
     - ...
   """
-  
+
   cdef FCIOData* _fcio_data
   cdef int _timeout
   cdef int _buffersize
@@ -121,9 +124,9 @@ cdef class CyFCIO:
   cdef int _tag
 
   cdef object _compression # compression type, <str>
-  cdef object _filename    # path to data file, <str>
+  cdef object _peer        # path to data file, <str>
   cdef object _compression_process # handle for the subprocess
-  
+
   cdef CyConfig config
   cdef CyEvent event
   cdef CyRecEvent recevent
@@ -132,7 +135,7 @@ cdef class CyFCIO:
 
   cdef CyFSP _fsp
 
-  def __cinit__(self, filename : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
+  def __cinit__(self, peer : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
     self._buffersize = buffersize
     self._timeout = timeout
@@ -143,9 +146,9 @@ cdef class CyFCIO:
 
     FCIODebug(self.debug)
 
-    if filename:
-      self._filename = filename
-      self.open(filename)
+    if peer:
+      self._peer = peer
+      self.open(peer)
 
   def __dealloc__(self):
     if self._fcio_data != NULL:
@@ -196,12 +199,14 @@ cdef class CyFCIO:
     """
     return self._buffersize
 
-  def open(self, filename : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto'):
+  def open(self, peer : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto'):
     if debug > 4:
-      print(f"fcio-py/open() {filename} {timeout} {buffersize} {debug} {compression}")
+      print(f"fcio-py/open() {peer} {timeout} {buffersize} {debug} {compression}")
     self.close()
 
-    self._filename = filename
+    self._peer = peer
+
+    self._peer_is_memory = True if self.peer.startswith("mem://") else False
 
     if buffersize:
       self._buffersize = buffersize
@@ -213,9 +218,9 @@ cdef class CyFCIO:
       self._compression = compression
 
     if self._compression == 'auto':
-      if self._filename.endswith('.zst'):
+      if self._peer.endswith('.zst'):
         self._compression = 'zstd'
-      elif self._filename.endswith('.gz'):
+      elif self._peer.endswith('.gz'):
         self._compression = 'gzip'
       else:
         self._compression = 'none'
@@ -227,35 +232,35 @@ cdef class CyFCIO:
       tmpdir = tempfile.TemporaryDirectory(prefix="fcio_")
       if self._timeout >= 0 and self._timeout < compression_minimum_timeout:
         self._timeout = compression_minimum_timeout
-      fifo = os.path.join(tmpdir.name, os.path.basename(self._filename))
+      fifo = os.path.join(tmpdir.name, os.path.basename(self._peer))
       os.mkfifo(fifo)
-      self._compression_process = subprocess.Popen(["zstd","-df","--no-progress","-q","--no-sparse","-o",fifo,self._filename])
+      self._compression_process = subprocess.Popen(["zstd","-df","--no-progress","-q","--no-sparse","-o",fifo,self._peer])
       self._fcio_data = FCIOOpen(fifo.encode(u"ascii"), self._timeout, self._buffersize)
       os.unlink(fifo)
       tmpdir.cleanup()
       if self._fcio_data == NULL:
-        raise IOError(f"{self._filename} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
-      
+        raise IOError(f"{self._peer} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
+
     elif self._compression == 'gzip':
       tmpdir = tempfile.TemporaryDirectory(prefix="fcio_")
       if self._timeout >= 0 and self._timeout < compression_minimum_timeout:
         self._timeout = compression_minimum_timeout
-      fifo = os.path.join(tmpdir.name, os.path.basename(self._filename))
+      fifo = os.path.join(tmpdir.name, os.path.basename(self._peer))
       os.mkfifo(fifo)
-      self._compression_process = subprocess.Popen(["gzip","q","-d","-c",self._filename,">",fifo])
+      self._compression_process = subprocess.Popen(["gzip","q","-d","-c",self._peer,">",fifo])
       self._fcio_data = FCIOOpen(fifo.encode(u"ascii"), self._timeout, self._buffersize)
       os.unlink(fifo)
       tmpdir.cleanup()
       if self._fcio_data == NULL:
-        raise IOError(f"{self._filename} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
+        raise IOError(f"{self._peer} couldn't be opened. The decompression is handled by a subprocess. Try increasing the timeout.")
 
     elif self._compression == 'none':
-      self._fcio_data = FCIOOpen(self._filename.encode(u"ascii"), self._timeout, self._buffersize)
+      self._fcio_data = FCIOOpen(self._peer.encode(u"ascii"), self._timeout, self._buffersize)
     else:
       raise ValueError(f"Compression parameter {self._compression} is not supported. Files ending in '.zst' or '.gz' will be automatically decompressed during reading.")
 
     if self._fcio_data == NULL:
-      raise IOError(f"Coudn't open: {self._filename}")
+      raise IOError(f"Couldn't open: {self._peer}")
 
     while self.get_record():
       if self._tag == FCIOTag.FCIOConfig:
@@ -268,6 +273,13 @@ cdef class CyFCIO:
     if self._fcio_data:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
+
+  def set_mem_field(self, mem_addr, mem_size):
+    if self._peer_is_memory:
+      if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), mem_addr, mem_size):
+        raise IOError(f"Couldn't set memory field: {mem_addr} {mem_size}")
+    else:
+      raise RunTimeWarning(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}")
 
   cpdef get_record(self):
     """
@@ -306,7 +318,7 @@ cdef class CyFCIO:
 
       return True
     else:
-      raise IOError(f"File {self._filename} not opened.")
+      raise IOError(f"File {self._peer} not opened.")
 
   @property
   def tag(self):
@@ -314,7 +326,7 @@ cdef class CyFCIO:
       returns the current tag
     """
     return self._tag
-  
+
   @property
   def config(self):
     """
@@ -347,7 +359,7 @@ cdef class CyFCIO:
   def tags(self):
     """
       Iterate through all FCIO records in the datastream.
-      
+
       Returns the current tag. Comparable behaviour to FCIOGetRecord of fcio.c
     """
     while self.get_record():

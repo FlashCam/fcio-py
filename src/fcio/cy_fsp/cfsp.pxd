@@ -1,6 +1,6 @@
 from numpy cimport uint8_t, uint64_t
 
-cdef extern from "fsp/io.h":
+cdef extern from "fsp.h":
   # Forward Decl
   ctypedef struct FCIOData:
     pass
@@ -9,10 +9,8 @@ cdef extern from "fsp/io.h":
   void FCIOGetFSPEvent(FCIOData* input, FSPState* fsp_state)
   void FCIOGetFSPStatus(FCIOData* input, StreamProcessor* processor)
 
-  void FSPFreeStreamProcessor(StreamProcessor* processor)
-  StreamProcessor* FSPCallocStreamProcessor()
-
-cdef extern from "fsp/state.h":
+  StreamProcessor *FSPCreate(unsigned int buffer_depth)
+  void FSPDestroy(StreamProcessor *processor)
 
   # defines in fcio.h
   cdef const int FCIOMaxChannels
@@ -139,7 +137,7 @@ cdef extern from "fsp/state.h":
     Timestamp post_trigger_window
 
 
-  ctypedef struct WindowedPeakSumConfig:
+  ctypedef struct DSPWindowedPeakSum:
     int tracemap[FCIOMaxChannels]
     float gains[FCIOMaxChannels]
     float thresholds[FCIOMaxChannels]
@@ -160,12 +158,12 @@ cdef extern from "fsp/state.h":
     int sum_window_stop_sample
     float coincidence_threshold
 
-  ctypedef struct HardwareMajorityConfig:
+  ctypedef struct DSPHardwareMajority:
     int ntraces
     int tracemap[FCIOMaxChannels]
     unsigned short fpga_energy_threshold_adc[FCIOMaxChannels]
 
-  ctypedef struct ChannelThresholdConfig:
+  ctypedef struct DSPChannelThreshold:
     int ntraces
     int tracemap[FCIOMaxChannels]
     unsigned short thresholds[FCIOMaxChannels]
@@ -200,9 +198,9 @@ cdef extern from "fsp/state.h":
 
   ctypedef struct StreamProcessor:
     FSPConfig config
-    FSPBuffer* buffer
+    FSPBuffer *buffer
 
-    WindowedPeakSumConfig *wps_cfg
-    HardwareMajorityConfig *hwm_cfg
-    ChannelThresholdConfig *ct_cfg
-    FSPStats* stats
+    DSPWindowedPeakSum *dsp_wps
+    DSPHardwareMajority *dsp_hwm
+    DSPChannelThreshold *dsp_ct
+    FSPStats *stats

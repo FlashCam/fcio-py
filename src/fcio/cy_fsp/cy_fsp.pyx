@@ -1,4 +1,4 @@
-from cfsp cimport StreamProcessor, FSPState, FSPCallocStreamProcessor, FSPFreeStreamProcessor
+from cfsp cimport StreamProcessor, FSPState, FSPCreate, FSPDestroy
 from cfsp cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
 from cfsp cimport FSPStats
 from cython.operator import dereference
@@ -20,15 +20,15 @@ cdef class CyFSPConfig:
 
   @property
   def wps(self):
-    return dereference(self._processor.wps_cfg)
+    return dereference(self._processor.dsp_wps)
 
   @property
   def hwm(self):
-    return dereference(self._processor.hwm_cfg)
+    return dereference(self._processor.dsp_hwm)
 
   @property
   def ct(self):
-    return dereference(self._processor.ct_cfg)
+    return dereference(self._processor.dsp_ct)
 
 cdef class CyFSPEvent:
   cdef:
@@ -36,7 +36,7 @@ cdef class CyFSPEvent:
 
   def __cinit__(self, CyFSP fsp):
     self._state = &fsp._state
-  
+
   @property
   def write_flags(self):
     return self._state.write_flags
@@ -69,7 +69,7 @@ cdef class CyFSP:
     CyFSPStatus _status
 
   def __cinit__(self):
-    self._processor = FSPCallocStreamProcessor()
+    self._processor = FSPCreate(0)
 
     self._config = CyFSPConfig(self)
     self._status = CyFSPStatus(self)
@@ -77,7 +77,7 @@ cdef class CyFSP:
 
   def __del__(self):
     if self._processor != NULL:
-      FSPFreeStreamProcessor(self._processor)
+      FSPDestroy(self._processor)
 
   def read_config(self, CyFCIO fcio):
     FCIOGetFSPConfig(fcio._fcio_data, self._processor)

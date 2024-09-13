@@ -5,7 +5,10 @@ import numpy
 from cfcio cimport FCIOMaxChannels
 
 cdef class DeadIntervalBuffer():
-  DEF FC_MAX_EVENTS = 2048
+  # maximum interval buffer size
+  # is given by the maximum number of events
+  # storable in the hardware
+  DEF FC_MAX_EVENTS = 2048 
   cdef long[FCIOMaxChannels][FC_MAX_EVENTS] interval_begin
   cdef long[FCIOMaxChannels][FC_MAX_EVENTS] interval_end
   cdef int[FCIOMaxChannels] current_write
@@ -19,6 +22,10 @@ cdef class DeadIntervalBuffer():
       self.current_write[i] = FC_MAX_EVENTS-1
       self.current_read[i] = 0
       self.fill[i] = 0
+      for j in range(FC_MAX_EVENTS):
+        if (self.interval_begin[i][j] != 0):
+          print("not zero")
+      #  self.interval_end[i][j] = 0
 
     self.current_interval = numpy.zeros((FCIOMaxChannels,), dtype=numpy.int64)
 
@@ -64,7 +71,7 @@ cdef class DeadIntervalBuffer():
   cdef read(self, int trace_idx_start, int ntraces):
     cdef int read_slot
     cdef int trace_idx
-    
+
     for offset in range(ntraces):
       trace_idx = trace_idx_start + offset
       read_slot = self.current_read[trace_idx]

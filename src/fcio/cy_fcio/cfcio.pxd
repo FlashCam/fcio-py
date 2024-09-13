@@ -1,5 +1,7 @@
 cdef extern from "fcio.h":
 
+    ctypedef void* FCIOStream
+
     # defines in fcio.h
     cdef const int FCIOMaxChannels
     cdef const int FCIOMaxSamples
@@ -182,3 +184,9 @@ cdef extern from "fcio.h":
     FCIOState* FCIOGetNextState(FCIOStateReader* reader, int* timedout)
 
     int FCIOPutState(FCIOStream output, FCIOState* state)
+
+    FCIOStream FCIOStreamHandle(FCIOData* data)
+
+cdef extern from "fcio_utils.h":
+
+  int FCIOSetMemField(FCIOStream stream, void *mem_addr, size_t mem_size);
