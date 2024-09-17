@@ -7,6 +7,7 @@ from cy_fcio import CyFSP
 
 cimport numpy
 import tempfile, os, subprocess
+from warnings import warn
 
 include "cy_fcio_config.pyx"
 include "cy_fcio_event.pyx"
@@ -274,12 +275,12 @@ cdef class CyFCIO:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
 
-  def set_mem_field(self, mem_addr, mem_size):
+  def set_mem_field(self, char[::1] memory not None):
     if self._peer_is_memory:
-      if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), mem_addr, mem_size):
-        raise IOError(f"Couldn't set memory field: {mem_addr} {mem_size}")
+      if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], len(memory)*memory.itemsize):
+        raise IOError(f"Couldn't set memory field: {memory}")
     else:
-      raise RunTimeWarning(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}")
+      warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}", category=RunTimeWarning)
 
   cpdef get_record(self):
     """

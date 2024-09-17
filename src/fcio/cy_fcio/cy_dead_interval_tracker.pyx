@@ -8,7 +8,7 @@ cdef class DeadIntervalBuffer():
   # maximum interval buffer size
   # is given by the maximum number of events
   # storable in the hardware
-  DEF FC_MAX_EVENTS = 2048 
+  DEF FC_MAX_EVENTS = 2048
   cdef long[FCIOMaxChannels][FC_MAX_EVENTS] interval_begin
   cdef long[FCIOMaxChannels][FC_MAX_EVENTS] interval_end
   cdef int[FCIOMaxChannels] current_write
