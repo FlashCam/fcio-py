@@ -101,8 +101,6 @@ cdef extern from "fcio.h":
         FCIOFSPEvent
         FCIOFSPStatus
 
-    ctypedef void* FCIOStream
-
     FCIOData* FCIOOpen(const char* name, int timeout, int buffer)
 
     int FCIOClose(FCIOData* x)
