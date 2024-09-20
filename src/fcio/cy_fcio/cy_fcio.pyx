@@ -5,6 +5,8 @@ from cfcio cimport FCIOSetMemField
 
 from cy_fcio import CyFSP
 
+cimport cython
+
 cimport numpy
 import tempfile, os, subprocess
 from warnings import warn
@@ -127,6 +129,7 @@ cdef class CyFCIO:
   cdef object _compression # compression type, <str>
   cdef object _peer        # path to data file, <str>
   cdef object _compression_process # handle for the subprocess
+  cdef object _peer_is_memory # mem:// peer is special, we save a boolean to remember
 
   cdef CyConfig config
   cdef CyEvent event
@@ -136,20 +139,17 @@ cdef class CyFCIO:
 
   cdef CyFSP _fsp
 
-  def __cinit__(self, peer : str = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
+  def __cinit__(self, peer : str | char[::1] = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
+    self._peer = peer
     self._buffersize = buffersize
     self._timeout = timeout
     self._debug = debug
     self._compression = compression
-
     self._extended = extended
 
-    FCIODebug(self.debug)
-
     if peer:
-      self._peer = peer
-      self.open(peer)
+      self.open(peer, timeout, buffersize, debug, compression, extended)
 
   def __dealloc__(self):
     if self._fcio_data != NULL:
@@ -200,23 +200,43 @@ cdef class CyFCIO:
     """
     return self._buffersize
 
-  def open(self, peer : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto'):
-    if debug > 4:
-      print(f"fcio-py/open() {peer} {timeout} {buffersize} {debug} {compression}")
+  def open(self, peer : str | char[::1] = None, timeout : int = None, buffersize : int = None, debug : int = None, compression : str = None, extended : bool = None):
     self.close()
-
-    self._peer = peer
-
-    self._peer_is_memory = True if self.peer.startswith("mem://") else False
 
     if buffersize:
       self._buffersize = buffersize
     if timeout:
-      self.timeout = timeout
+      self._timeout = timeout
     if debug:
-      self.debug = debug
+      self._debug = debug
     if compression:
       self._compression = compression
+    if extended:
+      self._extended = extended
+
+    FCIODebug(debug)
+
+    cdef char[::1] memory
+    cdef long long print_mem_addr
+
+    if isinstance(peer, str):
+      self._peer = peer
+      self._peer_is_memory = True if self._peer.startswith("mem://") else False
+    else:
+      try:
+        memory = memoryview(peer)
+        memory_addr = &memory[0]
+        memory_size = memory.itemsize * memory.shape[0]
+
+        # TODO: investigae what could be used instead of unsigned long to store the memory address savely
+        self._peer = f"mem://0x{<unsigned long>memory_addr:x}/{memory_size}"
+
+        self._peer_is_memory = True
+      except TypeError:
+        return
+
+    if debug > 4:
+      print(f"fcio-py/open: peer {self._peer} timeout {self._timeout} buffersize {self._buffersize} debug {self._debug} compression {self._compression} extended {self._extended}")
 
     if self._compression == 'auto':
       if self._peer.endswith('.zst'):
@@ -280,7 +300,7 @@ cdef class CyFCIO:
       if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], len(memory)*memory.itemsize):
         raise IOError(f"Couldn't set memory field: {memory}")
     else:
-      warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}", category=RunTimeWarning)
+      warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}, ignoring call to set_mem_field.")
 
   cpdef get_record(self):
     """
