@@ -1,11 +1,11 @@
-from cfcio cimport fcio_config
+from fcio_def cimport fcio_config
 
 cimport numpy
 import numpy
 
-cdef class CyConfig:
+cdef class Config:
   """
-  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
+  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or
   FCIO.open().
   Represents the immutable readout configuration after starting a daq run.
   Guaranteed to be the first record in the stream.
@@ -17,7 +17,7 @@ cdef class CyConfig:
   cdef numpy.ndarray _tracemap
   cdef int ntraces
 
-  def __cinit__(self, fcio : CyFCIO):
+  def __cinit__(self, fcio : FCIO):
     self.config = &fcio._fcio_data.config
 
     self.ntraces = self.config.adcs + self.config.triggers
@@ -65,12 +65,12 @@ cdef class CyConfig:
     """
     For 12-bit firmware:
       The number of samples used for the integrator value.
-      If sumlength >= blprecision use 
+      If sumlength >= blprecision use
       integrator = sumlength/blprecision * (theader[1] - theader[0])
       if sumlength < blprecision use
       integrator = theader[1] - theader[0] * sumlength / blprecision
     For 16-bit firmware:
-      No meaning.    
+      No meaning.
     """
     return numpy.int32(self.config.sumlength)
 

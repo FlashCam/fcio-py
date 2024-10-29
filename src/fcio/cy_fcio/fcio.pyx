@@ -1,27 +1,23 @@
-from cfcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
-from cfcio cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
-
-from cfcio cimport FCIOSetMemField
-
-from cy_fcio import CyFSP
+from fcio_def cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
+from fcio_def cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
+from fcio_def cimport FCIOSetMemField
 
 cimport cython
-
 cimport numpy
+
 import tempfile, os, subprocess
 from warnings import warn
 
-include "cy_fcio_config.pyx"
-include "cy_fcio_event.pyx"
-include "cy_fcio_recevent.pyx"
-include "cy_fcio_status.pyx"
-include "cy_dead_interval_tracker.pyx"
-include "cy_fcio_event_ext.pyx"
-include "cy_fcio_recevent_ext.pyx"
+include "dead_interval_tracker.pyx"
+include "extension.pyx"
+include "config.pyx"
+include "event.pyx"
+include "recevent.pyx"
+include "status.pyx"
 
-include "../cy_fsp/cy_fsp.pyx"
+include "../cy_fsp/fsp.pyx"
 
-cdef class CyFCIOTag:
+cdef class Tags:
   """
   A wrapper class for the fcio tag enum.
   Provides supported tags as attributes.
@@ -39,28 +35,28 @@ cdef class CyFCIOTag:
 
   # could be replaced with FCIOTagStr(int tag) in fcio_utils.c
   def str(tag):
-    if tag == CyFCIOTag.Config:
+    if tag == FCIOTag.FCIOConfig:
       return "Config"
-    elif tag == CyFCIOTag.Event:
+    elif tag == FCIOTag.FCIOEvent:
       return "Event"
-    elif tag == CyFCIOTag.Status:
+    elif tag == FCIOTag.FCIOStatus:
       return "Status"
-    elif tag == CyFCIOTag.RecEvent:
+    elif tag == FCIOTag.FCIORecEvent:
       return "RecEvent"
-    elif tag == CyFCIOTag.SparseEvent:
+    elif tag == FCIOTag.FCIOSparseEvent:
       return "SparseEvent"
-    elif tag == CyFCIOTag.EventHeader:
+    elif tag == FCIOTag.FCIOEventHeader:
       return "EventHeader"
-    elif tag == CyFCIOTag.FSPConfig:
+    elif tag == FCIOTag.FCIOFSPConfig:
       return "FSPConfig"
-    elif tag == CyFCIOTag.FSPEvent:
+    elif tag == FCIOTag.FCIOFSPEvent:
       return "FSPEvent"
-    elif tag == CyFCIOTag.FSPStatus:
+    elif tag == FCIOTag.FCIOFSPStatus:
       return "FSPStatus"
     else:
       return "Unknown"
 
-class CyFCIOLimit:
+class Limits:
   """
   A wrapper class to expose the compile time defines used in fcio.c
   """
@@ -69,10 +65,10 @@ class CyFCIOLimit:
   MaxPulses = FCIOMaxPulses
   TraceBufferLength = FCIOTraceBufferLength
 
-cdef class CyFCIO:
+cdef class FCIO:
   """
   The main class providing access to the data fields.
-  Interaction mainly by using the get_record() function or CyFCIO's properties.
+  Interaction mainly by using the get_record() function or FCIO's properties.
 
   Parameters
   ----------
@@ -102,7 +98,7 @@ cdef class CyFCIO:
 
   extended : bool
     enables additional properties of the FCIO record classes by replacing the FCIO properties with their extended classes.
-    e.g. type(FCIO.event) == CyEvent or CyEventExt
+    e.g. type(FCIO.event) == Event or EventExt
     some of these additions require additional calculations during reading, which might not be required and can be turned off by
     setting 'extended' to False.
     default: True
@@ -131,13 +127,13 @@ cdef class CyFCIO:
   cdef object _compression_process # handle for the subprocess
   cdef object _peer_is_memory # mem:// peer is special, we save a boolean to remember
 
-  cdef CyConfig config
-  cdef CyEvent event
-  cdef CyRecEvent recevent
-  cdef CyStatus status
+  cdef Config config
+  cdef Event event
+  cdef RecEvent recevent
+  cdef Status status
   cdef bint _extended
 
-  cdef CyFSP _fsp
+  cdef FSP _fsp
 
   def __cinit__(self, peer : str | char[::1] = None, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self._fcio_data = NULL
@@ -305,7 +301,7 @@ cdef class CyFCIO:
   cpdef get_record(self):
     """
       Calls FCIOGetRecord.
-      Saves the returned tag (accessible via CyFCIO.tag).
+      Saves the returned tag (accessible via FCIO.tag).
 
       Returns False if the tag <= 0 indicating either a stream error or timeout.
       Returns True otherwise.
@@ -315,20 +311,16 @@ cdef class CyFCIO:
 
       if self._tag == FCIOTag.FCIOConfig:
         # config must always be allocated first.
-        self.config = CyConfig(self)
-        self.status = CyStatus(self)
-        if self._extended:
-          self.event = CyEventExt(self)
-          self.recevent = CyRecEventExt(self)
-        else:
-          self.event = CyEvent(self)
-          self.recevent = CyRecEvent(self)
-      elif self._extended and (self._tag in [FCIOTag.FCIOEvent, FCIOTag.FCIOSparseEvent, FCIOTag.FCIOEventHeader]):
-        self.event.update(self._tag)
-      elif self._extended and self._tag == FCIOTag.FCIORecEvent:
+        self.config = Config(self)
+        self.status = Status(self)
+        self.event = Event(self)
+        self.recevent = RecEvent(self)
+      elif (self._tag in [FCIOTag.FCIOEvent, FCIOTag.FCIOSparseEvent, FCIOTag.FCIOEventHeader]):
+        self.event.update()
+      elif self._tag == FCIOTag.FCIORecEvent:
         self.recevent.update()
       elif self._tag == FCIOTag.FCIOFSPConfig:
-        self._fsp = CyFSP()
+        self._fsp = FSP()
         self._fsp.read_config(self)
       elif self._tag == FCIOTag.FCIOFSPEvent:
         self._fsp.read_event(self)

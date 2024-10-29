@@ -1,9 +1,9 @@
 import importlib.metadata
 __version__ = importlib.metadata.version("fcio")
 
-from .cy_fcio import CyFCIO as FCIO
-from .cy_fcio import CyFCIOTag as FCIOTag
-from .cy_fcio import CyFCIOLimit as FCIOLimit
+from .fcio import FCIO
+from .fcio import Tags
+from .fcio import Limits
 
 def fcio_open(peer : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended = True) -> FCIO:
   """

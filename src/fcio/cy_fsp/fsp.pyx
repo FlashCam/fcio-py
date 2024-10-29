@@ -1,13 +1,14 @@
-from cfsp cimport StreamProcessor, FSPState, FSPCreate, FSPDestroy
-from cfsp cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
-from cfsp cimport FSPStats
+from fsp_def cimport StreamProcessor, FSPState, FSPCreate, FSPDestroy
+from fsp_def cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
+from fsp_def cimport FSPStats
+
 from cython.operator import dereference
 
-cdef class CyFSPConfig:
+cdef class FSPConfig:
   cdef:
     StreamProcessor* _processor
 
-  def __cinit__(self, CyFSP fsp):
+  def __cinit__(self, FSP fsp):
     self._processor = fsp._processor
 
   @property
@@ -30,11 +31,11 @@ cdef class CyFSPConfig:
   def ct(self):
     return dereference(self._processor.dsp_ct)
 
-cdef class CyFSPEvent:
+cdef class FSPEvent:
   cdef:
     FSPState* _state
 
-  def __cinit__(self, CyFSP fsp):
+  def __cinit__(self, FSP fsp):
     self._state = &fsp._state
 
   @property
@@ -49,43 +50,43 @@ cdef class CyFSPEvent:
   def obs(self):
     return self._state.obs
 
-cdef class CyFSPStatus:
+cdef class FSPStatus:
   cdef:
     FSPStats* _stats
 
-  def __cinit__(self, CyFSP fsp):
+  def __cinit__(self, FSP fsp):
     self._stats = fsp._processor.stats
 
   @property
   def stats(self):
     return dereference(self._stats)
 
-cdef class CyFSP:
+cdef class FSP:
   cdef:
     FSPState _state
     StreamProcessor* _processor
-    CyFSPConfig _config
-    CyFSPEvent _event
-    CyFSPStatus _status
+    FSPConfig _config
+    FSPEvent _event
+    FSPStatus _status
 
   def __cinit__(self):
     self._processor = FSPCreate(0)
 
-    self._config = CyFSPConfig(self)
-    self._status = CyFSPStatus(self)
-    self._event = CyFSPEvent(self)
+    self._config = FSPConfig(self)
+    self._status = FSPStatus(self)
+    self._event = FSPEvent(self)
 
   def __del__(self):
     if self._processor != NULL:
       FSPDestroy(self._processor)
 
-  def read_config(self, CyFCIO fcio):
+  def read_config(self, FCIO fcio):
     FCIOGetFSPConfig(fcio._fcio_data, self._processor)
 
-  def read_event(self, CyFCIO fcio):
+  def read_event(self, FCIO fcio):
     FCIOGetFSPEvent(fcio._fcio_data, &self._state)
 
-  def read_status(self, CyFCIO fcio):
+  def read_status(self, FCIO fcio):
     FCIOGetFSPStatus(fcio._fcio_data, self._processor)
 
   @property

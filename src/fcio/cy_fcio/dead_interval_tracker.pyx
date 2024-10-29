@@ -1,8 +1,7 @@
 cimport numpy
 import numpy
 
-
-from cfcio cimport FCIOMaxChannels
+from fcio_def cimport FCIOMaxChannels
 
 cdef class DeadIntervalBuffer():
   # maximum interval buffer size

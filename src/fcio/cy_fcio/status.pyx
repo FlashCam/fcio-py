@@ -1,9 +1,9 @@
-from cfcio cimport fcio_status, card_status
+from fcio_def cimport fcio_status, card_status
 
 cimport numpy
 import numpy
 
-cdef class CyCardStatus:
+cdef class CardStatus:
   cdef fcio_status *status
   cdef card_status *card_status
 
@@ -14,10 +14,10 @@ cdef class CyCardStatus:
   cdef numpy.ndarray _environment
   cdef numpy.ndarray _othererrors
 
-  def __cinit__(self, cy_status : CyStatus, index):
+  def __cinit__(self, status : Status, index):
 
-    self.status = cy_status.status
-    self.card_status = &cy_status.status.data[index]
+    self.status = status.status
+    self.card_status = &status.status.data[index]
     self.index = index
 
     cdef unsigned int[::1] linkstates_view = self.card_status.linkstates
@@ -115,7 +115,7 @@ cdef class CyCardStatus:
     Number of errors from environment sensors.
     """
     return numpy.uint32(self.card_status.enverrors)
-  
+
   @property
   def ctierrors(self):
     """
@@ -136,7 +136,7 @@ cdef class CyCardStatus:
     5 possible other erros. Check fc250b source code for more information.
     """
     return self._othererrors
-  
+
   @property
   def environment(self):
     """
@@ -163,13 +163,13 @@ cdef class CyCardStatus:
     """
     return self._linkstates[:self.status.data[self.index].numlinks]
 
-cdef class CyStatus:
+cdef class Status:
   """
-  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or 
+  Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or
   FCIO.open().
   Exposes the fcio_status struct fields from the fcio.c library.
   All fields are exposes as numpy scalars or arrays with their corresponsing datatype and size.
-  The card status fields are accessible via the `data` attribute array 
+  The card status fields are accessible via the `data` attribute array
   """
   cdef fcio_config *config
   cdef fcio_status *status
@@ -179,12 +179,12 @@ cdef class CyStatus:
 
   cdef int num_cards
 
-  def __cinit__(self, fcio : CyFCIO):
+  def __cinit__(self, fcio : FCIO):
     self.status = &fcio._fcio_data.status
     self.config = &fcio._fcio_data.config
     self.num_cards = self.config.mastercards + self.config.triggercards + self.config.adccards
 
-    self._data = numpy.array([CyCardStatus(self, index) for index in range(self.num_cards)], dtype=object)
+    self._data = numpy.array([CardStatus(self, index) for index in range(self.num_cards)], dtype=object)
 
     cdef int[::1] statustime_view = self.status.statustime
     self._statustime = numpy.ndarray(shape=(10,), dtype=numpy.int32, offset=0, buffer=statustime_view)
@@ -205,7 +205,7 @@ cdef class CyStatus:
     Offsets:
     0 : fc250 (mastercard) seconds since run start
     1 : fc250 (mastercard) microseconds since last second
-    2 : unix utc (server) seconds 
+    2 : unix utc (server) seconds
     3 : unix utc (server) microseconds since last unix second
     5 : pps counter when the trigger was enabled after start of the daq
     6 : microseconds since [5]
@@ -231,7 +231,7 @@ cdef class CyStatus:
   @property
   def data(self):
     """
-    An array of CyCardStatus objects. The type of card is ordered as master -> trigger -> adc card and their counts should be taken from the CyConfig attributes.
+    An array of CardStatus objects. The type of card is ordered as master -> trigger -> adc card and their counts should be taken from the Config attributes.
 
     """
     return self._data[:self.status.cards]
