@@ -296,7 +296,7 @@ cdef class FCIO:
       if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], len(memory)*memory.itemsize):
         raise IOError(f"Couldn't set memory field: {memory}")
     else:
-      warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}, ignoring call to set_mem_field.")
+      warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}, ignoring.")
 
   cpdef get_record(self):
     """
