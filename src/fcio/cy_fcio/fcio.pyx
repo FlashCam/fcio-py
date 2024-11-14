@@ -196,7 +196,7 @@ cdef class FCIO:
     """
     return self._buffersize
 
-  def open(self, peer : str | char[::1] = None, timeout : int = None, buffersize : int = None, debug : int = None, compression : str = None, extended : bool = None):
+  def open(self, peer : str | char[::1], timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self.close()
 
     if buffersize:
