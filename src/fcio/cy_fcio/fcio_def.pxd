@@ -188,3 +188,5 @@ cdef extern from "fcio.h":
 cdef extern from "fcio_utils.h":
 
   int FCIOSetMemField(FCIOStream stream, void *mem_addr, size_t mem_size);
+
+  size_t FCIOStreamBytes(FCIOStream stream, int direction, size_t offset);

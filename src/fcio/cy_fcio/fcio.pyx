@@ -1,6 +1,6 @@
 from fcio_def cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
 from fcio_def cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
-from fcio_def cimport FCIOSetMemField
+from fcio_def cimport FCIOSetMemField, FCIOStreamBytes
 
 cimport cython
 cimport numpy
@@ -425,3 +425,29 @@ cdef class FCIO:
   @property
   def fsp(self):
     return self._fsp
+
+  def read_bytes(self, offset=0):
+    """
+        Returns the number of bytes read from stream since opening.
+        If offset is != 0, offset will be subtracted from the total,
+        allowing quick calculation of deltas as in:
+
+        n_delta_bytes = fcio.read_bytes(0)
+
+        while fcio.get_record()
+            n_delta_bytes = fcio.read_bytes(n_delta_bytes)
+    """
+    return FCIOStreamBytes(FCIOStreamHandle(self._fcio_data), b'r', offset)
+
+  def skipped_bytes(self, offset=0):
+    """
+        Returns the number of bytes skipped from stream since opening.
+        If offset is != 0, offset will be subtracted from the total,
+        allowing quick calculation of deltas as in:
+
+        n_delta_bytes = fcio.skipped_bytes(0)
+
+        while fcio.get_record()
+            n_delta_bytes = fcio.read_bytes(n_delta_bytes)
+    """
+    return FCIOStreamBytes(FCIOStreamHandle(self._fcio_data), b's', offset)
