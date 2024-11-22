@@ -26,11 +26,11 @@ cdef class Config:
     self._tracemap = numpy.ndarray(shape=(self.ntraces,), dtype=numpy.uint32, offset=0, buffer=tracemap_view)
 
   @property
-  def telid(self):
+  def streamid(self):
     """
-    The trace event list id.
+    The id of this data stream.
     """
-    return numpy.int32(self.config.telid)
+    return numpy.int32(self.config.streamid)
 
   @property
   def adcs(self):

@@ -11,7 +11,7 @@ cdef extern from "fcio.h":
   int FCIODebug(int level)
 
   ctypedef struct fcio_config:
-    int telid
+    int streamid
     int adcs
     int triggers
     int eventsamples
