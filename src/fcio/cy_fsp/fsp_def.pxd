@@ -6,7 +6,7 @@ cdef extern from "fsp.h":
     pass
 
   void FCIOGetFSPConfig(FCIOData* input, StreamProcessor* processor)
-  void FCIOGetFSPEvent(FCIOData* input, FSPState* fsp_state)
+  void FCIOGetFSPEvent(FCIOData* input, StreamProcessor* processor)
   void FCIOGetFSPStatus(FCIOData* input, StreamProcessor* processor)
 
   StreamProcessor *FSPCreate(unsigned int buffer_depth)
@@ -19,7 +19,7 @@ cdef extern from "fsp.h":
   cdef const int FCIOTraceBufferLength
 
   ### Write Flags
-  ctypedef union STFlags:
+  ctypedef union TriggerFlags:
     uint8_t hwm_multiplicity  # the multiplicity threshold has been reached
     uint8_t hwm_prescaled  # the event was prescaled due to the HWM condition
     uint8_t wps_abs  # the absolute peak sum threshold was reached
@@ -35,9 +35,10 @@ cdef extern from "fsp.h":
     uint8_t is_extended  # the event triggered (a) retrigger event(s)
 
     uint64_t is_flagged
+
   ctypedef struct FSPWriteFlags:
     EventFlags event
-    STFlags trigger
+    TriggerFlags trigger
     int write
 
   ### Proc Flags
@@ -85,7 +86,6 @@ cdef extern from "fsp.h":
     int multiplicity  # how many channels were above the threshold
     int trace_idx[FCIOMaxChannels]  # the corresponding fcio trace index
     unsigned short max[FCIOMaxChannels]  # the maximum per channel
-    # const char* label[FCIOMaxChannels]  # the name of the channel given during setup
 
   ctypedef struct evt_obs:
     int nextension  # if we found re-triggers how many events are consecutive from then on. the event with the extension flag carries the total number
@@ -103,42 +103,48 @@ cdef extern from "fsp.h":
     evt_obs evt
     SubEventList sub_event_list
 
-  ### Tie everthing together in the state struct
+  ### Tie everything together in the state struct
   ctypedef struct FSPState:
     # ommits FSP internal fields here, see "fsp_state.h" for the full definition
     FSPWriteFlags write_flags
     FSPProcessorFlags proc_flags
     FSPObservables obs
 
-
   ### FSPConfig / FSPStatus
   ctypedef struct Timestamp:
     long seconds
     long nanoseconds
 
-
-  ctypedef struct FSPConfig:
+  ctypedef struct FSPTriggerConfig:
     int hwm_threshold
     int hwm_prescale_ratio
     int wps_prescale_ratio
-    int muon_coincidence
 
     float relative_wps_threshold
     float absolute_wps_threshold
     float wps_prescale_rate
     float hwm_prescale_rate
 
-    HWMFlags wps_reference_flags_hwm
-    CTFlags wps_reference_flags_ct
-    WPSFlags wps_reference_flags_wps
+    HWMFlags wps_ref_flags_hwm
+    CTFlags wps_ref_flags_ct
+    WPSFlags wps_ref_flags_wps
+    int n_wps_ref_map_idx
+    int wps_ref_map_idx[FCIOMaxChannels]
 
     FSPWriteFlags enabled_flags
     Timestamp pre_trigger_window
     Timestamp post_trigger_window
 
+  ctypedef struct FSPTraceMap:
+    int format
+    int map[FCIOMaxChannels]
+    int n_mapped
+    int enabled[FCIOMaxChannels]
+    int n_enabled
+    char label[FCIOMaxChannels][8];
 
   ctypedef struct DSPWindowedPeakSum:
-    int tracemap[FCIOMaxChannels]
+    FSPTraceMap tracemap
     float gains[FCIOMaxChannels]
     float thresholds[FCIOMaxChannels]
     float lowpass[FCIOMaxChannels]
@@ -149,7 +155,6 @@ cdef extern from "fsp.h":
     int dsp_stop_sample[FCIOMaxChannels]
     int dsp_pre_max_samples
     int dsp_post_max_samples
-    int ntraces
 
     int apply_gain_scaling
 
@@ -159,15 +164,14 @@ cdef extern from "fsp.h":
     float coincidence_threshold
 
   ctypedef struct DSPHardwareMajority:
-    int ntraces
-    int tracemap[FCIOMaxChannels]
+    FSPTraceMap tracemap
     unsigned short fpga_energy_threshold_adc[FCIOMaxChannels]
 
   ctypedef struct DSPChannelThreshold:
-    int ntraces
-    int tracemap[FCIOMaxChannels]
+    FSPTraceMap tracemap
     unsigned short thresholds[FCIOMaxChannels]
-    # const char* labels[FCIOMaxChannels]
+    unsigned short max_values[FCIOMaxChannels]
+    int multiplicity
 
   ctypedef struct FSPStats:
     double start_time
@@ -197,10 +201,11 @@ cdef extern from "fsp.h":
     Timestamp buffer_window
 
   ctypedef struct StreamProcessor:
-    FSPConfig config
     FSPBuffer *buffer
 
-    DSPWindowedPeakSum *dsp_wps
-    DSPHardwareMajority *dsp_hwm
-    DSPChannelThreshold *dsp_ct
-    FSPStats *stats
+    FSPTriggerConfig triggerconfig
+    DSPWindowedPeakSum dsp_wps
+    DSPHardwareMajority dsp_hwm
+    DSPChannelThreshold dsp_ct
+    FSPStats stats
+    FSPState* fsp_state
