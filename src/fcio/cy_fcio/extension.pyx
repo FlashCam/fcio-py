@@ -130,7 +130,7 @@ cdef class FCIOExt:
       self._total_dead_time_ns[dr_start : dr_end] += self._cur_dead_time_ns[dr_start : dr_end]
 
   @property
-  def cur_dead_time_ns(self):
+  def dead_interval_ns(self):
     """
     The dead time since the last triggered event in nanoseconds.
     """
