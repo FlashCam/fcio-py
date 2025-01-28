@@ -27,7 +27,7 @@ def print_eventno(filename):
   with fcio_open(filename) as io:
     for event in io.events:
       # print(f"{event.eventnumber} {event.fpga_time_ns} {io.fsp.event.obs['wps']['max_value']:.2f} {io.fsp.event.obs['wps']['max_multiplicity']}")
-      print(f"{event.eventnumber} {event.fpga_time_ns} {io.fsp.event.obs['wps']['max_value']:.2f} {io.fsp.event.obs['wps']['max_multiplicity']} {true_write_flags(io.fsp.event.write_flags)} {true_proc_flags(io.fsp.event.proc_flags)}")
+      print(f"{event.eventnumber} {event.fpga_time_nsec} {io.fsp.event.obs['wps']['max_value']:.2f} {io.fsp.event.obs['wps']['max_multiplicity']} {true_write_flags(io.fsp.event.write_flags)} {true_proc_flags(io.fsp.event.proc_flags)}")
 
 
 if __name__ == "__main__":
