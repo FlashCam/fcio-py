@@ -33,7 +33,6 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Scientific/Engineering :: Mathematics",
   "Topic :: Scientific/Engineering :: Physics",
-  "Topic :: Software Development ",
 ]
 dependencies = ["numpy < 2"]
 
