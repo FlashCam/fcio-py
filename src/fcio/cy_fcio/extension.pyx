@@ -2,7 +2,7 @@ from fcio_def cimport fcio_config
 
 cimport numpy
 
-cdef class FCIOExt:
+cdef class FCIOHeaderExt:
 
   cdef fcio_config *_config_ptr
   cdef int* _timestamp

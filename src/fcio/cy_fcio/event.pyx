@@ -5,7 +5,7 @@ import numpy
 
 numpy.import_array()
 
-cdef class Event(FCIOExt):
+cdef class Event(FCIOHeaderExt):
   """
   Class internal to the fcio library. Do not allocate directly, must be created by using `fcio_open` or
   FCIO.open().
