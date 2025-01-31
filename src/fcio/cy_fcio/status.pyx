@@ -75,6 +75,20 @@ cdef class CardStatus:
     return numpy.uint32(self.card_status.maxticks)
 
   @property
+  def fpga_time_sec(self):
+    """
+    The current time in nanoseconds in units of fpga clock.
+    """
+    return numpy.float64(self.card_status.pps + 4e-9 * self.card_status.ticks)
+
+  @property
+  def fpga_time_nsec(self):
+    """
+    The current time in nanoseconds in units of fpga clock.
+    """
+    return numpy.int64(1000000000 * self.card_status.pps + 4 * self.card_status.ticks)
+
+  @property
   def numenv(self):
     """
     Size of the environment array.
@@ -150,6 +164,29 @@ cdef class CardStatus:
     return self._environment[:self.status.data[self.index].numenv]
 
   @property
+  def mainboard_temperatures_mC(self):
+    return self.environment[:5]
+
+  @property
+  def mainboard_voltages_mV(self):
+    return self.environment[5:10]
+
+  @property
+  def mainboard_current_mA(self):
+    return self.environment[10]
+
+  @property
+  def mainboard_humiditiy_permille(self):
+    return self.environment[11]
+
+  @property
+  def daughterboard_temperatures_mC(self):
+    if self.status.data[self.index].numenv == 14:
+      return self.environment[12:14]
+    else:
+      return numpy.full(2,numpy.nan)
+
+  @property
   def ctilinks(self):
     """
     Contain expert values, see fc250bcommands.h.
@@ -213,6 +250,27 @@ cdef class Status:
     5/6 signifies a start of the run offset one needs to for deadtime calculation
     """
     return self._statustime
+
+  @property
+  def fpga_time_sec(self):
+      """
+        Floating point calculation of statustime[0] * 1e-6 * statustime[1]
+      """
+      return numpy.float64(self._statustime[0] + 1e-6 * self._statustime[1])
+
+  @property
+  def unix_time_utc_sec(self):
+      """
+        Floating point calculation of statustime[1] * 1e-6 * statustime[3]
+      """
+      return numpy.float64(self._statustime[2] + 1e-6 * self._statustime[3])
+
+  @property
+  def fpga_start_time_sec(self):
+      """
+        Floating point calculation of statustime[5] * 1e-6 * statustime[6]
+      """
+      return numpy.float64(self._statustime[5] + 1e-6 * self._statustime[6])
 
   @property
   def cards(self):
