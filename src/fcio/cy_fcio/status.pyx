@@ -156,7 +156,7 @@ cdef class CardStatus:
     """
     Contains information from the on-board environment sensors in the following order:
     5 temperatures in mDegree
-    5 voltages in mV
+    6 voltages in mV
     1 main current im mA
     1 humidity in o/oo
     2 temperatures in mDegree, only present if adc piggy cards are used (adc card).
@@ -165,26 +165,24 @@ cdef class CardStatus:
 
   @property
   def mainboard_temperatures_mC(self):
-    return self.environment[:5]
+    return self._environment[:5]
 
   @property
   def mainboard_voltages_mV(self):
-    return self.environment[5:10]
+    return self._environment[5:11]
 
   @property
   def mainboard_current_mA(self):
-    return self.environment[10]
+    return self._environment[11]
 
   @property
   def mainboard_humiditiy_permille(self):
-    return self.environment[11]
+    return self._environment[12]
 
   @property
   def daughterboard_temperatures_mC(self):
-    if self.status.data[self.index].numenv == 14:
-      return self.environment[12:14]
-    else:
-      return numpy.full(2,numpy.nan)
+    # might be empty 
+    return self._environment[13:self.status.data[self.index].numenv]
 
   @property
   def ctilinks(self):
