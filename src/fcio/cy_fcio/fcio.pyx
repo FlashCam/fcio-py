@@ -144,6 +144,8 @@ cdef class FCIO:
     self._compression = compression
     self._extended = extended
 
+    self._fsp = None
+
     if peer:
       self.open(peer, timeout, buffersize, debug, compression, extended)
 
