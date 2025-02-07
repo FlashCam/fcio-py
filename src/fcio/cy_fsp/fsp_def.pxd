@@ -22,8 +22,8 @@ cdef extern from "fsp.h":
   ctypedef union TriggerFlags:
     uint8_t hwm_multiplicity  # the multiplicity threshold has been reached
     uint8_t hwm_prescaled  # the event was prescaled due to the HWM condition
-    uint8_t wps_abs  # the absolute peak sum threshold was reached
-    uint8_t wps_rel  # the relative peak sum threshold was reached and a coincidence to a reference event is fulfilled
+    uint8_t wps_sum # the standalone peak sum threshold was reached
+    uint8_t wps_coincident_sum # the coincidence peak sum threshold was reached and a coincidence to a reference event is fulfilled
     uint8_t wps_prescaled  # the event was prescaled due to the WPS condition
     uint8_t ct_multiplicity  # a channel was above the ChannelThreshold condition
 
@@ -31,8 +31,8 @@ cdef extern from "fsp.h":
 
 
   ctypedef union EventFlags:
-    uint8_t is_retrigger  # the event is a retrigger event
-    uint8_t is_extended  # the event triggered (a) retrigger event(s)
+    uint8_t is_consecutive # the event might be a retrigger event or start immediately after
+    uint8_t is_extended # the event preceeds one or more consecutive events
 
     uint64_t is_flagged
 
@@ -43,11 +43,11 @@ cdef extern from "fsp.h":
 
   ### Proc Flags
   ctypedef union WPSFlags:
-    uint8_t abs_threshold  # absolute threshold was reached
-    uint8_t rel_threshold  # relative threshold was reached
-    uint8_t rel_reference  # the event is a WPS reference event
-    uint8_t rel_pre_window  # the event is in the pre window of a reference event
-    uint8_t rel_post_window  # the event is in the post window of a reference event
+    uint8_t sum_threshold  # absolute threshold was reached
+    uint8_t coincidence_sum_threshold  # relative threshold was reached
+    uint8_t coincidence_ref  # the event is a WPS reference event
+    uint8_t ref_pre_window  # the event is in the pre window of a reference event
+    uint8_t ref_post_window  # the event is in the post window of a reference event
     uint8_t prescaled  # in addition to the multiplicity_below condition the current event is ready to prescale to it's timestamp
 
     uint64_t is_flagged
@@ -88,7 +88,7 @@ cdef extern from "fsp.h":
     unsigned short max[FCIOMaxChannels]  # the maximum per channel
 
   ctypedef struct evt_obs:
-    int nextension  # if we found re-triggers how many events are consecutive from then on. the event with the extension flag carries the total number
+    int nconsecutive # if we found re-triggers how many events are consecutive from then on. the event with the extension flag carries the total number
 
   ctypedef struct SubEventList:
     int size
@@ -116,12 +116,12 @@ cdef extern from "fsp.h":
     long nanoseconds
 
   ctypedef struct FSPTriggerConfig:
-    int hwm_threshold
+    int hwm_min_multiplicity
     int hwm_prescale_ratio
     int wps_prescale_ratio
 
-    float relative_wps_threshold
-    float absolute_wps_threshold
+    float wps_coincident_sum_threshold
+    float wps_sum_threshold
     float wps_prescale_rate
     float hwm_prescale_rate
 
@@ -149,29 +149,27 @@ cdef extern from "fsp.h":
     float thresholds[FCIOMaxChannels]
     float lowpass[FCIOMaxChannels]
     int shaping_widths[FCIOMaxChannels]
-    int dsp_pre_samples[FCIOMaxChannels]
-    int dsp_post_samples[FCIOMaxChannels]
+    int dsp_margin_front[FCIOMaxChannels]
+    int dsp_margin_back[FCIOMaxChannels]
     int dsp_start_sample[FCIOMaxChannels]
     int dsp_stop_sample[FCIOMaxChannels]
-    int dsp_pre_max_samples
-    int dsp_post_max_samples
+    int dsp_max_margin_front
+    int dsp_max_margin_back
 
     int apply_gain_scaling
 
-    int coincidence_window
+    int sum_window_size
     int sum_window_start_sample
     int sum_window_stop_sample
-    float coincidence_threshold
+    float sub_event_sum_threshold
 
-  ctypedef struct DSPHardwareMajority:
+  ctypedef struct DSPHardwareMultiplicity:
     FSPTraceMap tracemap
     unsigned short fpga_energy_threshold_adc[FCIOMaxChannels]
 
   ctypedef struct DSPChannelThreshold:
     FSPTraceMap tracemap
     unsigned short thresholds[FCIOMaxChannels]
-    unsigned short max_values[FCIOMaxChannels]
-    int multiplicity
 
   ctypedef struct FSPStats:
     double start_time
@@ -205,7 +203,7 @@ cdef extern from "fsp.h":
 
     FSPTriggerConfig triggerconfig
     DSPWindowedPeakSum dsp_wps
-    DSPHardwareMajority dsp_hwm
+    DSPHardwareMultiplicity dsp_hwm
     DSPChannelThreshold dsp_ct
     FSPStats stats
     FSPState* fsp_state
