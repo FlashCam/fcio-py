@@ -31,8 +31,8 @@ cdef extern from "fsp.h":
 
 
   ctypedef union EventFlags:
-    uint8_t is_consecutive # the event might be a retrigger event or start immediately after
-    uint8_t is_extended # the event preceeds one or more consecutive events
+    uint8_t consecutive # the event might be a retrigger event or start immediately after
+    uint8_t extended # the event preceeds one or more consecutive events
 
     uint64_t is_flagged
 
@@ -71,9 +71,9 @@ cdef extern from "fsp.h":
 
   ### Observables
   ctypedef struct wps_obs:
-    float max_value  # what is the maximum PE within the integration windows
-    int max_offset  # when is the total sum offset reached?
-    int max_multiplicity  # How many channels did have a peak above thresholds
+    float sum_value  # what is the maximum PE within the integration windows
+    int sum_offset  # when is the total sum offset reached?
+    int sum_multiplicity  # How many channels did have a peak above thresholds
     float max_single_peak_value  # which one was the largest individual peak
     int max_single_peak_offset  # which sample contains this peak
 
