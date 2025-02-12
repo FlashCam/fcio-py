@@ -1,4 +1,4 @@
-from fcio_def cimport fcio_recevent, fcio_config, FCIOMaxPulses
+from .def_fcio cimport fcio_recevent, fcio_config, FCIOMaxPulses
 
 cimport numpy
 import numpy

@@ -1,6 +1,6 @@
-from fcio_def cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
-from fcio_def cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
-from fcio_def cimport FCIOSetMemField, FCIOStreamBytes
+from .def_fcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
+from .def_fcio cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
+from .def_fcio cimport FCIOSetMemField, FCIOStreamBytes
 
 cimport cython
 cimport numpy
@@ -15,7 +15,7 @@ include "event.pyx"
 include "recevent.pyx"
 include "status.pyx"
 
-include "../cy_fsp/fsp.pyx"
+include "fsp.pyx"
 
 cdef class Tags:
   """

@@ -1,4 +1,4 @@
-from fcio_def cimport fcio_event, fcio_config, FCIOMaxChannels
+from .def_fcio cimport fcio_event, fcio_config, FCIOMaxChannels
 
 cimport numpy
 import numpy

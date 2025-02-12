@@ -1,4 +1,4 @@
-from fcio_def cimport fcio_config
+from .def_fcio cimport fcio_config
 
 cimport numpy
 

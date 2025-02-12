@@ -1,4 +1,4 @@
-from fcio_def cimport fcio_status, card_status
+from .def_fcio cimport fcio_status, card_status
 
 cimport numpy
 import numpy
@@ -181,7 +181,7 @@ cdef class CardStatus:
 
   @property
   def daughterboard_temperatures_mC(self):
-    # might be empty 
+    # might be empty
     return self._environment[13:self.status.data[self.index].numenv]
 
   @property

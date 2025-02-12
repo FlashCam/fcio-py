@@ -1,5 +1,5 @@
-from fsp_def cimport StreamProcessor, FSPCreate, FSPDestroy
-from fsp_def cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
+from .def_fsp cimport StreamProcessor, FSPCreate, FSPDestroy
+from .def_fsp cimport FCIOGetFSPConfig, FCIOGetFSPEvent, FCIOGetFSPStatus
 
 from cython.operator import dereference
 
