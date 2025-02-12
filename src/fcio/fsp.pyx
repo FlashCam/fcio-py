@@ -39,14 +39,18 @@ cdef class FSPEvent:
     cdef numpy.ndarray _obs_ct_traceidx
     cdef numpy.ndarray _obs_ct_max
 
+    cdef int _ct_size
+
   def __cinit__(self, FSP fsp):
     self._processor = fsp._processor
+
+  def prepare(self):
     # array accessors
     cdef int[::1] obs_ct_traceidx_view = self._processor.fsp_state.obs.ct.trace_idx
     cdef unsigned short[::1] obs_ct_max_view = self._processor.fsp_state.obs.ct.max
-
-    self._obs_ct_traceidx = numpy.ndarray(shape=(self._processor.fsp_state.obs.ct.multiplicity,), dtype=numpy.int32, offset=0, buffer=obs_ct_traceidx_view)
-    self._obs_ct_max = numpy.ndarray(shape=(self._processor.fsp_state.obs.ct.multiplicity,), dtype=numpy.uint16, offset=0, buffer=obs_ct_max_view)
+    self._ct_size = self._processor.dsp_ct.tracemap.n_mapped
+    self._obs_ct_traceidx = numpy.ndarray(shape=(self._ct_size,), dtype=numpy.int32, offset=0, buffer=obs_ct_traceidx_view)
+    self._obs_ct_max = numpy.ndarray(shape=(self._ct_size,), dtype=numpy.uint16, offset=0, buffer=obs_ct_max_view)
 
   @property
   def write_flags(self):
@@ -125,10 +129,10 @@ cdef class FSPEvent:
     return self._processor.fsp_state.obs.ct.multiplicity
   @property
   def obs_ct_trace_idx(self):
-    return self._obs_ct_traceidx
+    return self._obs_ct_traceidx[:self._processor.fsp_state.obs.ct.multiplicity]
   @property
   def obs_ct_max(self):
-    return self._obs_ct_max
+    return self._obs_ct_max[:self._processor.fsp_state.obs.ct.multiplicity]
   @property
   def obs_evt_nconsecutive(self):
     return self._processor.fsp_state.obs.evt.nconsecutive
@@ -165,6 +169,8 @@ cdef class FSP:
 
   def read_config(self, FCIO fcio):
     FCIOGetFSPConfig(fcio._fcio_data, self._processor)
+    # set array sizes
+    self._event.prepare()
 
   def read_event(self, FCIO fcio):
     FCIOGetFSPEvent(fcio._fcio_data, self._processor)
