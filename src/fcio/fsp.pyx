@@ -147,7 +147,79 @@ cdef class FSPStatus:
 
   @property
   def stats(self):
+    """
+    The internal c-struct exposed as python dictionary.
+    """
     return self._processor.stats
+
+  @property
+  def start_time(self):
+    return self._processor.stats.start_time
+
+  @property
+  def log_time(self):
+    return self._processor.stats.log_time
+
+  @property
+  def dt_logtime(self):
+    return self._processor.stats.dt_logtime
+
+  @property
+  def runtime(self):
+    return self._processor.stats.runtime
+
+  @property
+  def n_read_events(self):
+    return self._processor.stats.n_read_events
+
+  @property
+  def n_written_events(self):
+    return self._processor.stats.n_written_events
+
+  @property
+  def n_discarded_events(self):
+    return self._processor.stats.n_discarded_events
+
+  @property
+  def dt_n_read_events(self):
+    return self._processor.stats.dt_n_read_events
+
+  @property
+  def dt_n_written_events(self):
+    return self._processor.stats.dt_n_written_events
+
+  @property
+  def dt_n_discarded_events(self):
+    return self._processor.stats.dt_n_discarded_events
+
+  @property
+  def dt(self):
+    return self._processor.stats.dt
+
+  @property
+  def dt_rate_read_events(self):
+    return self._processor.stats.dt_rate_read_events
+
+  @property
+  def dt_rate_write_events(self):
+    return self._processor.stats.dt_rate_write_events
+
+  @property
+  def dt_rate_discard_events(self):
+    return self._processor.stats.dt_rate_discard_events
+
+  @property
+  def avg_rate_read_events(self):
+    return self._processor.stats.avg_rate_read_events
+
+  @property
+  def avg_rate_write_events(self):
+    return self._processor.stats.avg_rate_write_events
+
+  @property
+  def avg_rate_discard_events(self):
+    return self._processor.stats.avg_rate_discard_events
+
 
 cdef class FSP:
   cdef:
