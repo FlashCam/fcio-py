@@ -198,7 +198,7 @@ cdef class FCIO:
     """
     return self._buffersize
 
-  def open(self, peer : str | char[::1], timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
+  def open(self, peer : str | memoryview, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended : bool = False):
     self.close()
 
     if buffersize:
@@ -222,12 +222,12 @@ cdef class FCIO:
       self._peer_is_memory = True if self._peer.startswith("mem://") else False
     else:
       try:
-        memory = memoryview(peer)
+        # memory = memoryview(peer)
+        memory = peer.cast('B')
         memory_addr = &memory[0]
-        memory_size = memory.itemsize * memory.shape[0]
 
-        # TODO: investigae what could be used instead of unsigned long to store the memory address savely
-        self._peer = f"mem://0x{<unsigned long>memory_addr:x}/{memory_size}"
+        # TODO: investigate what could be used instead of unsigned long to store the memory address savely
+        self._peer = f"mem://0x{<unsigned long>memory_addr:x}/{memory.nbytes}"
 
         self._peer_is_memory = True
       except TypeError:
@@ -293,9 +293,10 @@ cdef class FCIO:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
 
-  def set_mem_field(self, char[::1] memory not None):
+  def set_mem_field(self, memoryview mview not None):
+    cdef char[::1] memory = mview.cast('B')
     if self._peer_is_memory:
-      if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], len(memory)*memory.itemsize):
+      if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], memory.nbytes):
         raise IOError(f"Couldn't set memory field: {memory}")
     else:
       warn(f"fcio-py/set_mem_field was called but peer is not mem:// : {self._peer}, ignoring.")
