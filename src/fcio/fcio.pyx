@@ -293,6 +293,14 @@ cdef class FCIO:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
 
+  def is_open(self) -> Bool:
+    """
+      Returns True/False if the internal data structur is allocated (i.e. if
+      open() has been called without closing.
+      No connection checks to remote peers are performed.
+    """
+    return self._fcio_data != NULL
+
   def set_mem_field(self, memoryview mview not None):
     cdef char[::1] memory = mview.cast('B')
     if self._peer_is_memory:
