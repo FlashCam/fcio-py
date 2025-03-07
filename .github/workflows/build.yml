@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-tags: true
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5.1.0
+        uses: actions/setup-python@v5.4.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Get history and tags for SCM versioning to work
