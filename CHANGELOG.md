@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0] - 2025-02-07
+
+- Add support for FSPConfig,FSPEvent,FSPStatus records
+- go back to `_nsec` suffix.
+- add additional accessors
+
 ## [0.2.5] - 2024-04-26
 
 ### Added
