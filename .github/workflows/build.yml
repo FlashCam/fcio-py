@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 'releases/**'
+      - "releases/**"
   pull_request:
   release:
 
@@ -19,24 +19,24 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ['3.9', '3.10', '3.11','3.12','3,13']
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         os: [ubuntu-latest, macOS-latest]
 
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v4
-      with:
-        fetch-tags: true
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5.1.0            
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Get history and tags for SCM versioning to work
-      run: |
-        git fetch --prune --unshallow --tags
-    - name: Install pypa/build
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install build
-    - name: Build source dist and a binary wheel
-      run: python3 -m build
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Get history and tags for SCM versioning to work
+        run: |
+          git fetch --prune --unshallow --tags
+      - name: Install pypa/build
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install build
+      - name: Build source dist and a binary wheel
+        run: python3 -m build
