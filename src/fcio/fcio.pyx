@@ -237,7 +237,7 @@ cdef class FCIO:
       print(f"fcio-py/open: peer {self._peer} timeout {self._timeout} buffersize {self._buffersize} debug {self._debug} compression {self._compression} extended {self._extended}")
 
     if self._compression == 'auto':
-      if self._peer.endswith('.zst'):
+      if self._peer.endswith('.zst') or self._peer.endswith('.zstd'):
         self._compression = 'zstd'
       elif self._peer.endswith('.gz'):
         self._compression = 'gzip'
@@ -293,7 +293,7 @@ cdef class FCIO:
       FCIOClose(self._fcio_data)
       self._fcio_data = NULL
 
-  def is_open(self) -> Bool:
+  def is_open(self) -> bool:
     """
       Returns True/False if the internal data structur is allocated (i.e. if
       open() has been called without closing.
@@ -459,6 +459,6 @@ cdef class FCIO:
         n_delta_bytes = fcio.skipped_bytes(0)
 
         while fcio.get_record()
-            n_delta_bytes = fcio.read_bytes(n_delta_bytes)
+            n_delta_bytes = fcio.skipped_bytes(n_delta_bytes)
     """
     return FCIOStreamBytes(FCIOStreamHandle(self._fcio_data), b's', offset)
