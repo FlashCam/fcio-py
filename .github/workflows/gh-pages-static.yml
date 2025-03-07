@@ -41,7 +41,7 @@ jobs:
           sphinx-apidoc --force --no-toc --no-headings --output docs/source .
           sphinx-build -M html docs/source/ docs/build/
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
