@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.7.0] - 2025-02-07
+## [0.7.2] - 2025-03-10
+
+- Fix bug when accessing theader field in eventheaders.
+- Update CI pipeline to pre-build wheels
+
+## [0.7.0] - 2025-03-07
 
 - Add support for FSPConfig,FSPEvent,FSPStatus records
 - go back to `_nsec` suffix.

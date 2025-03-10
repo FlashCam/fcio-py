@@ -36,8 +36,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.1
-      - uses: actions/upload-artifact@v3
+        uses: pypa/cibuildwheel@v2.23.0
+      - uses: actions/upload-artifact@v4
         with:
           name: pkg-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
@@ -45,9 +45,7 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish to pypi
-    needs:
-      - build_sdist
-        build_wheel
+    needs: [build_sdist, build_wheels]
     runs-on: ubuntu-latest
     environment:
       name: pypi
