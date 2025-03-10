@@ -143,7 +143,7 @@ cdef class Event(FCIOHeaderExt):
     """
     The internal 2D FCIO traces buffer.
     Exposed for faster read operations, e.g. using memcpy or remapping of the buffer.
-    For waveform acces, use the `trace` property.
+    For waveform access, use the `trace` property.
     shape is (<total number of mapped trace>,<number of samples + 2>)
     """
     return self._np_traces
@@ -173,7 +173,7 @@ cdef class Event(FCIOHeaderExt):
     """
     1-d array of fpga baseline values with length <total number of read out traces>.
     """
-    return self.theader[self.trace_list,0] / self._config_ptr.blprecision
+    return self._np_theader[self.trace_list,0] / self._config_ptr.blprecision
 
   @property
   def fpga_energy(self):
@@ -181,6 +181,6 @@ cdef class Event(FCIOHeaderExt):
     1-d array of fpga energy values with length <total number of read out traces>.
     """
     if self._config_ptr.adcbits == 12: #250MHz
-      return self._config_ptr.sumlength / self._config_ptr.blprecision * (self.theader[self.trace_list,1] - self.theader[self.trace_list,0])
+      return self._config_ptr.sumlength / self._config_ptr.blprecision * (self._np_theader[self.trace_list,1] - self._np_theader[self.trace_list,0])
     elif self._config_ptr.adcbits == 16: #62.5MHz
-      return self.theader[self.trace_list,1]
+      return self._np_theader[self.trace_list,1]
