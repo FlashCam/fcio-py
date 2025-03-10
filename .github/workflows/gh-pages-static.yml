@@ -1,9 +1,9 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: gh-pages-static
 
 on:
   workflow_run:
-    workflows: [Publish fcio-py]
+    workflows: [publish]
     types:
       - completed
 

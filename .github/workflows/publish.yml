@@ -1,4 +1,4 @@
-name: Publish fcio-py
+name: publish
 
 on:
   push:
@@ -7,36 +7,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build sdist
+  build_sdist:
+    name: Build source distribution
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5.4.0
         with:
-          python-version: "3.x"
-      - name: Get history and tags for SCM versioning to work
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - name: Install pypa/build
-        run: >-
-          python3 -m pip install build --user
-      - name: Build a binary wheel and a source tarball
-        run: python3 -m build --sdist
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Build sdist
+        run: pipx run build --sdist
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
+          name: pkg-sdist
+          path: dist/*.tar.gz
+
+  build_wheels:
+    name: Build wheel on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.1
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pkg-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
 
   publish-to-pypi:
     name: >-
       Publish to pypi
     needs:
-      - build
+      - build_sdist
+        build_wheel
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -48,7 +59,7 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: pkg-*
           path: dist/
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -68,14 +79,14 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: pkg-*
           path: dist/
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: >-
             ./dist/*.tar.gz
-          #  ./dist/*.whl
+            ./dist/*.whl
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -112,7 +123,7 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: pkg-*
           path: dist/
       - name: Publish distribution 📦 to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
