@@ -38,7 +38,11 @@ jobs:
         uses: pypa/cibuildwheel@v2.23.0
         env:
           # On an Linux Intel runner with qemu installed, build Intel and ARM wheels
-          CIBW_ARCHS: "native"
+          CIBW_ARCHS: native
+          # Only build cpython and manylinux
+          CIBW_BUILD: cp*-manylinux*
+          # Skip CPython 3.{6..8}
+          CIBW_SKIP: cp36-* cp37-* cp38-*
       - uses: actions/upload-artifact@v4
         with:
           name: pkg-wheels-${{ matrix.os }}-${{ strategy.job-index }}
