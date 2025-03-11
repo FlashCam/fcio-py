@@ -8,43 +8,44 @@ on:
 
 jobs:
   build_sdist:
-    name: Build source distribution
+    name: build sdist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-tags: true
           fetch-depth: 0
-      - name: Build sdist
+      - name: build
         run: pipx run build --sdist
-      - name: Store the distribution packages
+      - name: upload dist packages
         uses: actions/upload-artifact@v4
         with:
           name: pkg-sdist
           path: dist/*.tar.gz
 
   build_wheels:
-    name: Build wheel on ${{ matrix.os }}
+    name: build wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Build wheels
+      - name: build wheels
         uses: pypa/cibuildwheel@v2.23.0
+        env:
+          # On an Linux Intel runner with qemu installed, build Intel and ARM wheels
+          CIBW_ARCHS: "native"
       - uses: actions/upload-artifact@v4
         with:
           name: pkg-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
 
   publish-to-pypi:
-    name: >-
-      Publish to pypi
+    name: publish to pypi
     needs: [build_sdist, build_wheels]
     runs-on: ubuntu-latest
     environment:
@@ -52,34 +53,52 @@ jobs:
       url: https://pypi.org/p/fcio
     permissions:
       id-token: write
-
     steps:
-      - name: Download all the dists
+      - name: download dist packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pkg-*
+          path: dist
+          merge-multiple: true
+      - name: publish packages to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-to-testpypi:
+    name: publish to test.pypi
+    needs: [build_sdist, build_wheels]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/fcio
+    permissions:
+      id-token: write
+    steps:
+      - name: download dist packages
         uses: actions/download-artifact@v4
         with:
           pattern: pkg-*
           path: dist/
-      - name: Publish distribution 📦 to PyPI
+          merge-multiple: true
+      - name: publish packages to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
 
   github-release:
-    name: >-
-      Sign the sdist and publish to github releases
-    needs:
-      - publish-to-pypi
+    name: sign the dist packages and publish to github releases
+    needs: [build_sdist, build_wheels]
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
       id-token: write
-
     steps:
-      - name: Download all the dists
+      - name: download dist packages
         uses: actions/download-artifact@v4
         with:
           pattern: pkg-*
-          path: dist/
-      - name: Sign the dists with Sigstore
+          path: dist
+          merge-multiple: true
+      - name: sign the dists with sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: >-
@@ -93,7 +112,7 @@ jobs:
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
           --notes ""
-      - name: Upload artifact signatures to GitHub Release
+      - name: upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
         # Upload to GitHub Release using the `gh` CLI.
@@ -103,27 +122,3 @@ jobs:
           gh release upload
           '${{ github.ref_name }}' dist/**
           --repo '${{ github.repository }}'
-
-  publish-to-testpypi:
-    name: Publish to test.pypi
-    needs:
-      - publish-to-pypi
-    runs-on: ubuntu-latest
-
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/fcio
-
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pkg-*
-          path: dist/
-      - name: Publish distribution 📦 to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
