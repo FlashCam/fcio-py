@@ -40,7 +40,7 @@ jobs:
           # On an Linux Intel runner with qemu installed, build Intel and ARM wheels
           CIBW_ARCHS: native
           # Only build cpython and manylinux
-          CIBW_BUILD: cp*-manylinux*
+          CIBW_BUILD: cp*-manylinux_* cp*-macosx_*
           # Skip CPython 3.{6..8}
           CIBW_SKIP: cp36-* cp37-* cp38-*
       - uses: actions/upload-artifact@v4
