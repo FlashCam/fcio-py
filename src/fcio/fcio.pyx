@@ -222,8 +222,7 @@ cdef class FCIO:
       self._peer_is_memory = True if self._peer.startswith("mem://") else False
     else:
       try:
-        # memory = memoryview(peer)
-        memory = peer.cast('B')
+        memory = memoryview(peer).cast('B')
         memory_addr = &memory[0]
 
         # TODO: investigate what could be used instead of unsigned long to store the memory address savely
@@ -301,8 +300,12 @@ cdef class FCIO:
     """
     return self._fcio_data != NULL
 
-  def set_mem_field(self, memoryview mview not None):
-    cdef char[::1] memory = mview.cast('B')
+  def set_mem_field(self, mview not None):
+    cdef char[::1] memory
+    try:
+      memory = memoryview(mview).cast('B')
+    except TypeError as e:
+      raise TypeError('fcio-py/set_mem_field requires an object which supports the PEP 3118 buffer interface').with_traceback(e.__traceback__)
     if self._peer_is_memory:
       if 0 != FCIOSetMemField(FCIOStreamHandle(self._fcio_data), &memory[0], memory.nbytes):
         raise IOError(f"Couldn't set memory field: {memory}")
