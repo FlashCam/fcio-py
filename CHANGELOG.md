@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.4] - 2025-03-12
+
+- Add input checking to set_mem_field.
+- Require numpy>=2 for compiling, but numpy>=1.23.5 as run time dependency.
+
+## [0.7.3] - 2025-03-11
+
+- Update CI pipeline to compile wheels.
+
 ## [0.7.2] - 2025-03-10
 
 - Fix bug when accessing theader field in eventheaders.
