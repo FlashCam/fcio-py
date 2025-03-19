@@ -1,3 +1,4 @@
 sphinx
 sphinx_mdinclude
-furo
+sphinx-autodoc-typehints
+sphinx-book-theme

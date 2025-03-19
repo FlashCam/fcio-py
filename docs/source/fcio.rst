@@ -1,18 +1,51 @@
-FCIO API
-========
+FCIO Reference
+==============
 
-.. Subpackages
-.. -----------
+.. autoclass:: fcio.fcio.FCIO
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
 
-.. .. toctree::
-   :maxdepth: 4
+.. autoclass:: fcio.fcio.Config
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
 
-.. automodule:: fcio
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autoclass:: fcio.fcio.Event
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
 
-.. automodule:: cy_fcio
-	:members:
-   	:undoc-members:
-   	:inherited-members:
+.. autoclass:: fcio.fcio.RecEvent
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+.. autoclass:: fcio.fcio.Status
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+.. autoclass:: fcio.fcio.FSPConfig
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+.. autoclass:: fcio.fcio.FSPEvent
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+  :exclude-members: prepare
+
+.. autoclass:: fcio.fcio.FSPStatus
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:

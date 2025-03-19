@@ -2,11 +2,11 @@ The fcio-py documentation
 ================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+  :maxdepth: 4
+  :caption: Contents:
 
-   readme
-   fcio
+  readme
+  fcio
 
 Indices and tables
 ==================

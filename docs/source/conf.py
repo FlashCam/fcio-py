@@ -20,8 +20,8 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(os.path.dirname(inspect.getfile(fcio))))
 
 project = 'fcio'
-copyright = '2023, FlashCam'
-author = 'Simon Sailer'
+copyright = '2025'
+author = 'FlashCam'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -31,7 +31,9 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'sphinx_mdinclude'
+    'sphinx_mdinclude',
+    'sphinx_autodoc_typehints',
+    'sphinx_rtd_theme'
 ]
 napoleon_google_docstring = False
 napoleon_use_param = False
@@ -46,9 +48,16 @@ exclude_patterns = ['_build', '_templates']
 
 html_title = 'fcio-py'
 html_static_path = ['_static']
-html_theme = 'furo'
+html_theme = 'sphinx_book_theme'
 html_theme_options = {
-    "source_repository": "https://github.com/FlashCam/fcio-py/",
-    "source_branch": "main",
-    "source_directory": "docs/source/",
+    "repository_url": "https://github.com/FlashCam/fcio-py",
+    "use_repository_button": True,
+    "show_navbar_depth": 4,
+    "show_toc_level": 3,
+}
+html_context = {
+  'display_github': True,
+  'github_user': 'FlashCam',
+  'github_repo': 'fcio-py',
+  'github_version': 'main/docs/source/',
 }
