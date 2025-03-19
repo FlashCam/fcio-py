@@ -5,6 +5,8 @@ from .fcio import FCIO
 from .fcio import Tags
 from .fcio import Limits
 
+from .fcio import Config, Event, Status, FSPConfig, FSPEvent, FSPStatus
+
 def fcio_open(peer : str, timeout : int = 0, buffersize : int = 0, debug : int = 0, compression : str = 'auto', extended = True) -> FCIO:
   """
   Opens an fcio data file or tcp stream and returns an FCIO object exposing the data fields as well as interaction (reading) from stream.
