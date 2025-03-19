@@ -11,8 +11,6 @@ For convenience all supported fcio records are exposed as iterable properties of
 
 # Usage
 
-
-
 ## Simple code example
 
 The following example opens an fcio file and prints some basic event content to stdout:
@@ -49,4 +47,3 @@ source $MY_ENV/bin/activate
 
 This library depends on `meson-python/meson` as build tool and `Cython`/`numpy` to wrap the `c`-sources. These should be installed automatically wenn running `python3 -m build`.
 To allow a more traditional workflow a thin `Makefile` is available which wraps the `python3` and `meson` specific commands.
-
