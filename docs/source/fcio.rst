@@ -1,11 +1,34 @@
 FCIO Reference
 ==============
 
+Entry
+-----
+
+.. autofunction:: fcio.fcio_open
+
+Classes
+-------
+
 .. autoclass:: fcio.fcio.FCIO
   :members:
   :inherited-members:
   :show-inheritance:
   :undoc-members:
+
+.. autoclass:: fcio.fcio.Tags
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+.. autoclass:: fcio.fcio.Limits
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+Records
+-------
 
 .. autoclass:: fcio.fcio.Config
   :members:
@@ -26,6 +49,12 @@ FCIO Reference
   :undoc-members:
 
 .. autoclass:: fcio.fcio.Status
+  :members:
+  :inherited-members:
+  :show-inheritance:
+  :undoc-members:
+
+.. autoclass:: fcio.fcio.CardStatus
   :members:
   :inherited-members:
   :show-inheritance:
