@@ -2,3 +2,4 @@ sphinx
 sphinx_mdinclude
 sphinx-autodoc-typehints
 sphinx-book-theme
+sphinx-rtd-theme
