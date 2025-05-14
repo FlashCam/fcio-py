@@ -53,8 +53,8 @@ cdef extern from "fsp.h":
     uint64_t is_flagged
 
   ctypedef union HWMFlags:
-    uint8_t multiplicity_threshold  # the multiplicity threshold (number of channels) has been reached
-    uint8_t multiplicity_below  # all non-zero channels have an hardware value below the set amplitude threshold
+    uint8_t sw_multiplicity  # the multiplicity threshold (number of channels) has been reached in sw
+    uint8_t hw_multiplicity  # at least one has fpga_energy > 0
     uint8_t prescaled  # in addition to the multiplicity_below condition the current event is ready to prescale to it's timestamp
 
     uint64_t is_flagged
@@ -78,9 +78,10 @@ cdef extern from "fsp.h":
     int max_single_peak_offset  # which sample contains this peak
 
   ctypedef struct hwm_obs:
-    int multiplicity  # how many channels have fpga_energy > 0
+    int hw_multiplicity  # how many channels have fpga_energy > 0
     unsigned short max_value  # what is the largest fpga_energy of those
     unsigned short min_value  # what is the smallest fpga_energy of those
+    int sw_multiplicity # how many channels were above the fpga_energy threshold in software trigger and the required multiplicity
 
   ctypedef struct ct_obs:
     int multiplicity  # how many channels were above the threshold
@@ -89,6 +90,10 @@ cdef extern from "fsp.h":
 
   ctypedef struct evt_obs:
     int nconsecutive # if we found re-triggers how many events are consecutive from then on. the event with the extension flag carries the total number
+
+  ctypedef struct prescale_obs:
+    int n_hwm_prescaled # how many hwm channels were prescaled
+    unsigned short hwm_prescaled_trace_idx[FCIOMaxChannels] # which channels were prescaled
 
   ctypedef struct SubEventList:
     int size
@@ -101,6 +106,7 @@ cdef extern from "fsp.h":
     hwm_obs hwm
     ct_obs ct
     evt_obs evt
+    prescale_obs ps
     SubEventList sub_event_list
 
   ### Tie everything together in the state struct
@@ -117,13 +123,13 @@ cdef extern from "fsp.h":
 
   ctypedef struct FSPTriggerConfig:
     int hwm_min_multiplicity
-    int hwm_prescale_ratio
+    int hwm_prescale_ratio[FCIOMaxChannels]
     int wps_prescale_ratio
 
     float wps_coincident_sum_threshold
     float wps_sum_threshold
     float wps_prescale_rate
-    float hwm_prescale_rate
+    float hwm_prescale_rate[FCIOMaxChannels]
 
     HWMFlags wps_ref_flags_hwm
     CTFlags wps_ref_flags_ct

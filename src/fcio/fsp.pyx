@@ -38,8 +38,10 @@ cdef class FSPEvent:
     StreamProcessor* _processor
     cdef numpy.ndarray _obs_ct_traceidx
     cdef numpy.ndarray _obs_ct_max
+    cdef numpy.ndarray _obs_ps_hwm_prescaled_trace_idx
 
     cdef int _ct_size
+    cdef int _hwm_size
 
   def __cinit__(self, FSP fsp):
     self._processor = fsp._processor
@@ -48,9 +50,12 @@ cdef class FSPEvent:
     # array accessors
     cdef int[::1] obs_ct_traceidx_view = self._processor.fsp_state.obs.ct.trace_idx
     cdef unsigned short[::1] obs_ct_max_view = self._processor.fsp_state.obs.ct.max
+    cdef unsigned short[::1] obs_ps_hwm_prescaled_trace_idx = self._processor.fsp_state.obs.ps.hwm_prescaled_trace_idx
     self._ct_size = self._processor.dsp_ct.tracemap.n_mapped
+    self._hwm_size = self._processor.dsp_hwm.tracemap.n_mapped
     self._obs_ct_traceidx = numpy.ndarray(shape=(self._ct_size,), dtype=numpy.int32, offset=0, buffer=obs_ct_traceidx_view)
     self._obs_ct_max = numpy.ndarray(shape=(self._ct_size,), dtype=numpy.uint16, offset=0, buffer=obs_ct_max_view)
+    self._obs_ps_hwm_prescaled_trace_idx = numpy.ndarray(shape=(self._hwm_size,), dtype=numpy.uint16, offset=0, buffer=obs_ps_hwm_prescaled_trace_idx)
 
   @property
   def write_flags(self):
@@ -116,8 +121,11 @@ cdef class FSPEvent:
   def obs_wps_max_single_peak_offset(self):
     return self._processor.fsp_state.obs.wps.max_single_peak_offset
   @property
-  def obs_hwm_multiplicity(self):
-    return self._processor.fsp_state.obs.hwm.multiplicity
+  def obs_hwm_hw_multiplicity(self):
+    return self._processor.fsp_state.obs.hwm.hw_multiplicity
+  @property
+  def obs_hwm_sw_multiplicity(self):
+    return self._processor.fsp_state.obs.hwm.sw_multiplicity
   @property
   def obs_hwm_max_value(self):
     return self._processor.fsp_state.obs.hwm.max_value
@@ -136,6 +144,9 @@ cdef class FSPEvent:
   @property
   def obs_evt_nconsecutive(self):
     return self._processor.fsp_state.obs.evt.nconsecutive
+  @property
+  def obs_ps_hwm_prescaled_trace_idx(self):
+    return self._obs_ps_hwm_prescaled_trace_idx[:self._processor.fsp_state.obs.ps.n_hwm_prescaled]
 
 
 cdef class FSPStatus:
