@@ -1,6 +1,6 @@
 [wrap-git]
 url=https://github.com/FlashCam/fcio.git
-revision=main
+revision=8e65987d04a2bdc329f609729b5b9572f2958cf9
 depth=1
 
 [provide]
