@@ -15,7 +15,7 @@ def get_git_version(cwd):
     if len(parts) == 1:
       return parts[0]
     elif len(parts) == 3:
-      return f"{parts[0]}.dev{parts[1]}"
+      return f"{parts[0].removeprefix('v')}.dev{parts[1]}"
     else:
       return None
   except Exception:

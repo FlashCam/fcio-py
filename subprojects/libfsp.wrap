@@ -1,6 +1,6 @@
 [wrap-git]
 url=https://github.com/ssailer/libfsp.git
-revision=590da1792ca71b57bfed07163887912b134be704
+revision=ac12a7e78177e8035c56afed63a4390fff261a59
 depth=1
 
 [provide]
