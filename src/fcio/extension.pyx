@@ -141,11 +141,11 @@ cdef class FCIOHeaderExt:
 
     if _dead_interval_start_nsec > 0:
       # if first event contains start and stop stamps, it's a new dead interval before this event
-      self._dead_interval_buffer.add(_dead_interval_start_nsec, _dead_interval_stop_nsec, dr_start, dr_end)
+      self._dead_interval_buffer.add(_dead_interval_start_nsec, _dead_interval_stop_nsec, self._deadregion[5], self._deadregion[6])
 
     self._dead_interval_nsec[dr_start : dr_end] = 0
-    while self._dead_interval_buffer.is_before(_daq_synchronized_timestamp_nsec, dr_start, dr_end):
-      self._dead_interval_nsec[dr_start : dr_end] = self._dead_interval_buffer.read(dr_start, dr_end)
+    while self._dead_interval_buffer.is_before(_daq_synchronized_timestamp_nsec, self._deadregion[5], self._deadregion[6]):
+      self._dead_interval_nsec[dr_start : dr_end] = self._dead_interval_buffer.read(self._deadregion[5], self._deadregion[6])
       self._dead_time_nsec[dr_start : dr_end] += self._dead_interval_nsec[dr_start : dr_end]
 
     self._run_time_nsec = self._fpga_time_nsec - self._trigger_enable_time_nsec
