@@ -68,6 +68,7 @@ cdef extern from "fsp.h":
     HWMFlags hwm
     WPSFlags wps
     CTFlags ct
+    EventFlags evt
 
   ### Observables
   ctypedef struct wps_obs:
