@@ -1,0 +1,7 @@
+[wrap-git]
+url=https://github.com/fwerner/bufio.git
+revision=d491334f60db16193b72c46854511647d0289ac3
+depth=1
+
+[provide]
+dependency_names = bufio
