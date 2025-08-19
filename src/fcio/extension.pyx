@@ -69,18 +69,18 @@ cdef class FCIOHeaderExt:
     self._card_addresses = self._tracemap >> 16 # upper 16bit
     self._card_channels = self._tracemap % (1 << 16) # lower 16bit
 
-    self._trigger_enable_time_nsec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.int64)
+    self._trigger_enable_time_nsec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.int64)
     self._trigger_enable_time_nsec[:] = -1
 
-    self._dead_interval_nsec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.int64)
-    self._dead_time_nsec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.int64)
-    self._dead_time_sec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.float64)
+    self._dead_interval_nsec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.int64)
+    self._dead_time_nsec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.int64)
+    self._dead_time_sec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.float64)
 
-    self._run_time_nsec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.int64)
-    self._run_time_sec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.float64)
+    self._run_time_nsec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.int64)
+    self._run_time_sec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.float64)
 
-    self._life_time_nsec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.int64)
-    self._life_time_sec = numpy.zeros(shape=(self._config_ptr.adcs,),dtype=numpy.float64)
+    self._life_time_nsec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.int64)
+    self._life_time_sec = numpy.zeros(shape=(self._maxtraces,),dtype=numpy.float64)
 
     if self._config_ptr.adcbits == 12:
       self._num_channels_per_card = 24
@@ -117,7 +117,7 @@ cdef class FCIOHeaderExt:
     # default dead intervals affect all channels
     # only dr_start is used to track progress
     cdef int dr_start = 0
-    cdef int dr_end = self._config_ptr.adcs
+    cdef int dr_end = self._maxtraces
 
     # for daqmode 12 (event.type 11), each card has it's own eventnumbers, clock counters and dead intervals
 
