@@ -18,7 +18,7 @@ jobs:
       - name: build
         run: pipx run build --sdist
       - name: upload dist packages
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pkg-sdist
           path: dist/*.tar.gz
@@ -43,7 +43,7 @@ jobs:
           CIBW_BUILD: cp*-manylinux_* cp*-macosx_*
           # Skip CPython 3.{6..8}
           CIBW_SKIP: cp36-* cp37-* cp38-*
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: pkg-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
