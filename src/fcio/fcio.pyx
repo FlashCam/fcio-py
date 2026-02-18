@@ -1,4 +1,4 @@
-from .def_fcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOStreamHandle, FCIOData, FCIOTag
+from .def_fcio cimport FCIOOpen, FCIOClose, FCIODebug, FCIOGetRecord, FCIOTimeout, FCIOWaitMessage, FCIOStreamHandle, FCIOData, FCIOTag
 from .def_fcio cimport FCIOMaxChannels, FCIOMaxSamples, FCIOMaxPulses, FCIOTraceBufferLength
 from .def_fcio cimport FCIOSetMemField, FCIOStreamBytes
 
@@ -321,6 +321,9 @@ cdef class FCIO:
       Returns True otherwise.
     """
     if self._fcio_data:
+      if FCIOWaitMessage(self._fcio_data.ptmio, self._timeout) <= 0:
+        return False
+
       self._tag = FCIOGetRecord(self._fcio_data)
 
       if self._tag == FCIOTag.FCIOConfig:

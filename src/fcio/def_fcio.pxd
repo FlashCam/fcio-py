@@ -185,6 +185,8 @@ cdef extern from "fcio.h":
 
   FCIOStream FCIOStreamHandle(FCIOData* data)
 
+  int FCIOWaitMessage(FCIOStream stream, int timeout_ms)
+
 cdef extern from "fcio_utils.h":
 
   int FCIOSetMemField(FCIOStream stream, void *mem_addr, size_t mem_size);
