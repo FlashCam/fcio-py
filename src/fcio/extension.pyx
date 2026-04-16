@@ -99,7 +99,9 @@ cdef class FCIOHeaderExt:
     # update current current fpga timestamp from pps/clk counters
     cdef long long _daq_synchronized_timestamp_nsec = (NSEC_PER_SEC * self._timestamp[1] + 4 * self._timestamp[2])
     self._fpga_time_nsec = _daq_synchronized_timestamp_nsec
-    cdef long long _unix_start_time_nsec = 0
+    # the start time in the time of the readout server. There is some additional delay between
+    # sending the start run command and the actual trigger enable
+    cdef long long _unix_start_time_nsec = (NSEC_PER_SEC * self._timeoffset[5] + 1000 * self._timeoffset[6])
 
     # update absolute time information
     if self._config_ptr.gps != 0:
@@ -134,10 +136,11 @@ cdef class FCIOHeaderExt:
       if _dead_interval_start_nsec == 0 and _dead_interval_stop_nsec > 0:
         # if only start is zero, it's daqmode 12 per card and we can estimate the trigger enable timestamp from that
         self._trigger_enable_time_nsec[dr_start : dr_end] = _dead_interval_stop_nsec
+      # should this check be just an `else`?
       elif _dead_interval_start_nsec == 0 and _dead_interval_stop_nsec == 0:
-        # timeoffset[6] is in usec
-        _unix_start_time_nsec = (NSEC_PER_SEC * self._timeoffset[5] + 1000 * self._timeoffset[6])
-        self._trigger_enable_time_nsec[dr_start : dr_end] = _unix_start_time_nsec
+         self._trigger_enable_time_nsec[dr_start : dr_end] = self._fpga_time_nsec
+      elif _dead_interval_start_nsec > self._fpga_time_nsec:
+        self._trigger_enable_time_nsec[dr_start : dr_end] = self._fpga_time_nsec
 
     if _dead_interval_start_nsec > 0:
       # if first event contains start and stop stamps, it's a new dead interval before this event
