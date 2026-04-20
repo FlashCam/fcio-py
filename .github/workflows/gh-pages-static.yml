@@ -40,7 +40,7 @@ jobs:
           python -m pip install fcio
           sphinx-build -M html docs/source/ docs/build/
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
